@@ -42,7 +42,27 @@ The series covers economically significant private-sector and public-sector ente
 For further information see [the official documentation](https://www.stats.govt.nz/information-releases/new-zealand-business-demography-statistics-at-february-2020/). 
 
 ### Getting started
-TODO
+
+1. **Prerequisites**:
+   - R 4.3
+   - Quarto 1.6
+
+2. **Clone the repository**:
+   ```bash
+   git clone <repository-url>
+   cd balanced_spatial_regionisation
+   ```
+
+3. **Install dependencies**:
+   ```r
+   # Install renv if not already installed
+   if (!requireNamespace("renv", quietly = TRUE)) {
+     install.packages("renv")
+   }
+   
+   # Restore project dependencies
+   renv::restore()
+   ```
 
 ### Repository structure
 
@@ -62,6 +82,7 @@ TODO
 ├── data/
 ├── outputs/
 ├── renv/
+├── renv.lock
 ├── _quarto.yml
 ├── LICENSE
 └── README.md
