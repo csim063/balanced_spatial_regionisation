@@ -69,16 +69,8 @@ For further information see [the official documentation](https://www.stats.govt.
 ```
 .
 ├── notebooks/
-│   ├── 01_data_preparation.qmd          # Data preparation and cleaning
-│   ├── 02_greedy_algorithm.qmd          # Implementation of the greedy spatial algorithm
-│   ├── 03_redcap.qmd                    # Implementation of REDCAP algorithm
-│   ├── 04_skater.qmd                    # Implementation of SKATER algorithm
-│   ├── 05_smc_regionalization.qmd       # Implementation of SMC regionalization
-│   ├── 06_simulated_annealing.qmd       # Implementation of Simulated Annealing
-│   └── 07_comparative_analysis.qmd      # Comparative analysis of all approaches
-├── scripts/
-│   ├── 00_get_data.R                  # Script to download and prepare data
-│   ├── 01_make_adjacency.R            # Script to create adjacency matrix
+│   ├── 01_balanced_regionalisation.qmd          # Full detailed analysis notebook
+│   ├── 02_linkedin_summary_post.qmd            # Reduced more sharable notebook
 ├── data/
 ├── outputs/
 ├── renv/

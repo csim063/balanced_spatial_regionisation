@@ -1,0 +1,163 @@
+---
+theme: materia
+title: "Balanced Spatial Regionalisation"
+author: "Craig Simpkins"
+date: "2025-09-08"
+---
+
+This notebook does stuff that I should fully describe later.
+
+```{r}
+#| label: setup
+#| warning: false
+#| message: false
+library(sf)
+library(tidyverse)
+library(tmap)
+library(leaflet)
+library(viridis)
+library(patchwork)
+library(gt)
+```
+
+```{r}
+#| label: load_data
+#| warning: false
+#| message: false
+#| output: true
+#| echo: true
+
+# Load business data. Choose the correct path depending on whether the code is
+# being run interactively or from the notebook.
+if (interactive()) {
+    be_sf <- st_read("data/new-zealand-business-demography-statistics-at-february-2020-.shp")
+} else {
+    be_sf <- st_read("../data/new-zealand-business-demography-statistics-at-february-2020-.shp")
+}
+
+# Display the first few rows of the data as a gt table
+be_sf_head <- head(be_sf, 5) %>% 
+    st_drop_geometry() %>% 
+    gt() %>% 
+    tab_header(title = "First five rows of the business and employment data")
+
+be_sf_head
+rm(be_sf_head)
+
+# Select only relevant columns
+be_sf <- be_sf %>%
+  select(SA22020_V1, SA22020__1, Total_geog, Total_empl, LAND_AREA_) %>%
+  rename(sa2_code = SA22020_V1,
+         sa2_name = SA22020__1,
+         total_businesses = Total_geog,
+         total_employees = Total_empl,
+         land_area = LAND_AREA_)
+```
+
+Check for missing data.
+
+```{r}
+#| label: missing_data_check
+#| warning: false
+#| message: false
+
+is.na(be_sf) %>% colSums() # 81 polygons with missing business or employment data
+
+# Make a simple plot with the missing data polygons highlighted
+plot(st_geometry(be_sf), col = "lightblue")
+plot(st_geometry(be_sf[is.na(be_sf$total_businesses) | is.na(be_sf$total_employees), ]), add = TRUE, col = "red")
+```
+
+The missing data are all the offshore areas (i.e. the coastline polygons and Lake Taupo). We will remove these polygons from the analysis. We will also remove the Chatham islands just to make visualisations a little more compact.
+
+```{r}
+#| label: remove_missing_data
+#| warning: false
+#| message: false
+be_sf <- be_sf %>%
+  filter(!is.na(total_businesses) & !is.na(total_employees))
+
+# Remove Chatham Islands (SA2 code 700200)
+be_sf <- be_sf %>%
+  filter(sa2_code != "700200")
+```
+
+Basic EDA stats to understand the data
+```{r}
+#| label: eda_stats
+#| warning: false
+#| message: false
+
+be_sf %>%
+  st_drop_geometry() %>%
+  summarise(across(c(total_businesses, total_employees, land_area),
+                  list(mean = mean,
+                       median = median,
+                       sd = sd,
+                       cv = ~sd(.x) / mean(.x),
+                       min = min,
+                       max = max),
+                  .names = "{.col}_{.fn}")) %>%
+  pivot_longer(
+    cols = everything(),
+    names_to = c("Variable", ".value"),
+    names_pattern = "(.*)_(.*)"
+  ) %>%
+  mutate(Variable = recode(Variable,
+                           "total_businesses" = "Businesses",
+                           "total_employees" = "Employees",
+                           "land_area" = "Land area")) %>%
+  gt() %>%
+  fmt_number(columns = where(is.numeric), decimals = 0) %>%
+  cols_label(
+    Variable = "Variable",
+    mean = "Mean",
+    median = "Median",
+    sd = "Std. Dev.",
+    cv = "Coef. of Var.",
+    min = "Minimum",
+    max = "Maximum"
+  ) %>%
+  tab_header(title = "NZ business and employment data summary statistics")
+
+tm_shape(be_sf) +
+  tm_polygons("total_employees",
+              style = "quantile",
+              palette = viridis::rocket(200,
+                                        direction = -1,
+                                        begin = 0.2, end = 1),
+              title = "Employees per SA2")
+```
+
+Inital statistics of how well balanced each SA2 area is in terms of business and employment, may be used later to assess how well balanced the final regions are.
+
+```{r}
+#| label: initial_balance_stats
+#| warning: false
+#| message: false
+
+sa2_base_stats <- data.frame(
+  Metric = c("Number of polygons",
+             "Mean employees per polygon",
+             "Median employees per polygon",
+             "CV employees",
+             "Mean businesses per polygon",
+             "Median businesses per polygon",
+             "CV businesses"),
+  Value = c(nrow(be_sf),
+            round(mean(be_sf$total_employees), 0),
+            round(median(be_sf$total_employees), 0),
+            round(sd(be_sf$total_employees) / mean(be_sf$total_employees), 3),
+            round(mean(be_sf$total_businesses), 0),
+            round(median(be_sf$total_businesses), 0),
+            round(sd(be_sf$total_businesses) / mean(be_sf$total_businesses), 3))
+)
+
+sa2_base_stats %>%
+  gt() %>%
+  cols_label(
+    Metric = "Metric",
+    Value = "Value"
+  ) %>%
+  tab_header(title = "Initial SA2 balance")
+```

@@ -1,0 +1,51 @@
+Column name,Shapefile column name,Column details including industry - Australian and New Zealand Standard Industrial Classification 2006,Column details including industry geographic units and employee count
+OBJECTID,OBJECTID,OBJECTID,OBJECTID
+SA22020_V1_00,SA22020_V1,Statistical Area 2 2020 code,Statistical Area 2 2020 code
+SA22020_V1_00_NAME,SA22020_V1,Statistical Area 2 2020 name,Statistical Area 2 2020 name
+SA22020_V1_00_NAME_ASCII,SA22020_V1,Statistical Area 2 2020 name ascii,Statistical Area 2 2020 name ascii
+LAND_AREA_SQ_KM,LAND_AREA_,Square kilometres of land area,Square kilometres of land area
+AREA_SQ_KM,AREA_SQ_KM,Square kilometres of total area,Square kilometres of total area
+SHAPE_STArea__,SHAPE_STAr,SHAPE_STArea__,SHAPE_STArea__
+SHAPE_STLength__,SHAPE_STLe,SHAPE_STArea__,SHAPE_STArea__
+A_geographic_units,A_geograph,A Agriculture Forestry and Fishing,Agriculture Forestry and Fishing - geographic units
+A_employee_count,A_employee,A Agriculture Forestry and Fishing,Agriculture Forestry and Fishing - employee count
+B_geographic_units,B_geograph,B Mining,Mining - geographic units
+B_employee_count,B_employee,B Mining,Mining - employee count
+C_geographic_units,C_geograph,C Manufacturing,Manufacturing - geographic units
+C_employee_count,C_employee,C Manufacturing,Manufacturing - employee count
+D_geographic_units,D_geograph,D Electricity Gas Water and Waste Services,Electricity Gas Water and Waste Services - geographic units
+D_employee_count,D_employee,D Electricity Gas Water and Waste Services,Electricity Gas Water and Waste Services - employee count
+E_geographic_units,E_geograph,E Construction,Construction - geographic units
+E_employee_count,E_employee,E Construction,Construction - employee count
+F_geographic_units,F_geograph,F Wholesale Trade,Wholesale Trade - geographic units
+F_employee_count,F_employee,F Wholesale Trade,Wholesale Trade - employee count
+G_geographic_units,G_geograph,G Retail Trade,Retail Trade - geographic units
+G_employee_count,G_employee,G Retail Trade,Retail Trade - employee count
+H_geographic_units,H_geograph,H Accommodation and Food Services,Accommodation and Food Services - geographic units
+H_employee_count,H_employee,H Accommodation and Food Services,Accommodation and Food Services - employee count
+I_geographic_units,I_geograph,I Transport Postal and Warehousing,Transport Postal and Warehousing - geographic units
+I_employee_count,I_employee,I Transport Postal and Warehousing,Transport Postal and Warehousing - employee count
+J_geographic_units,J_geograph,J Information Media and Telecommunications,Information Media and Telecommunications - geographic units
+J_employee_count,J_employee,J Information Media and Telecommunications,Information Media and Telecommunications - employee count
+K_geographic_units,K_geograph,K Financial and Insurance Services,Financial and Insurance Services - geographic units
+K_employee_count,K_employee,K Financial and Insurance Services,Financial and Insurance Services - employee count
+L_geographic_units,L_geograph,L Rental Hiring and Real Estate Services,Rental Hiring and Real Estate Services - geographic units
+L_employee_count,L_employee,L Rental Hiring and Real Estate Services,Rental Hiring and Real Estate Services - employee count
+M_geographic_units,M_geograph,M Professional Scientific and Technical Services,Professional Scientific and Technical Services - geographic units
+M_employee_count,M_employee,M Professional Scientific and Technical Services,Professional Scientific and Technical Services - employee count
+N_geographic_units,N_geograph,N Administrative and Support Services,Administrative and Support Services - geographic units
+N_employee_count,N_employee,N Administrative and Support Services,Administrative and Support Services - employee count
+O_geographic_units,O_geograph,O Public Administration and Safety,Public Administration and Safety - geographic units
+O_employee_count,O_employee,O Public Administration and Safety,Public Administration and Safety - employee count
+P_geographic_units,P_geograph,P Education and Training,Education and Training - geographic units
+P_employee_count,P_employee,P Education and Training,Education and Training - employee count
+Q_geographic_units,Q_geograph,Q Health Care and Social Assistance,Health Care and Social Assistance - geographic units
+Q_employee_count,Q_employee,Q Health Care and Social Assistance,Health Care and Social Assistance - employee count
+R_geographic_units,R_geograph,R Arts and Recreation Services,Arts and Recreation Services - geographic units
+R_employee_count,R_employee,R Arts and Recreation Services,Arts and Recreation Services - employee count
+S_geographic_units,S_geograph,S Other Services,Other Services - geographic units
+S_employee_count,S_employee,S Other Services,Other Services - employee count
+Total_geographic_units,Total_geog,Total Industry,Total Industry - Total geographic units
+Total_employee_count,Total_empl,Total Industry,Total Industry - Total employee count
+SHAPE_Length,SHAPE_Leng,SHAPE_Length,SHAPE_Length
+SHAPE_Area,SHAPE_Area,SHAPE_Area,SHAPE_Area

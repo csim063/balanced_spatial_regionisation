@@ -1,0 +1,2444 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en"><head>
+
+<meta charset="utf-8">
+<meta name="generator" content="quarto-1.6.37">
+
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+
+<meta name="author" content="Craig Simpkins">
+<meta name="dcterms.date" content="2025-09-08">
+
+<title>Balanced Spatial Regionalisation</title>
+<style>
+code{white-space: pre-wrap;}
+span.smallcaps{font-variant: small-caps;}
+div.columns{display: flex; gap: min(4vw, 1.5em);}
+div.column{flex: auto; overflow-x: auto;}
+div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+ul.task-list{list-style: none;}
+ul.task-list li input[type="checkbox"] {
+  width: 0.8em;
+  margin: 0 0.8em 0.2em -1em; /* quarto-specific, see https://github.com/quarto-dev/quarto-cli/issues/4556 */ 
+  vertical-align: middle;
+}
+/* CSS for syntax highlighting */
+pre > code.sourceCode { white-space: pre; position: relative; }
+pre > code.sourceCode > span { line-height: 1.25; }
+pre > code.sourceCode > span:empty { height: 1.2em; }
+.sourceCode { overflow: visible; }
+code.sourceCode > span { color: inherit; text-decoration: inherit; }
+div.sourceCode { margin: 1em 0; }
+pre.sourceCode { margin: 0; }
+@media screen {
+div.sourceCode { overflow: auto; }
+}
+@media print {
+pre > code.sourceCode { white-space: pre-wrap; }
+pre > code.sourceCode > span { display: inline-block; text-indent: -5em; padding-left: 5em; }
+}
+pre.numberSource code
+  { counter-reset: source-line 0; }
+pre.numberSource code > span
+  { position: relative; left: -4em; counter-increment: source-line; }
+pre.numberSource code > span > a:first-child::before
+  { content: counter(source-line);
+    position: relative; left: -1em; text-align: right; vertical-align: baseline;
+    border: none; display: inline-block;
+    -webkit-touch-callout: none; -webkit-user-select: none;
+    -khtml-user-select: none; -moz-user-select: none;
+    -ms-user-select: none; user-select: none;
+    padding: 0 4px; width: 4em;
+  }
+pre.numberSource { margin-left: 3em;  padding-left: 4px; }
+div.sourceCode
+  {   }
+@media screen {
+pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
+}
+</style>
+
+
+<script src="01_balanced_regionalisation_files/libs/clipboard/clipboard.min.js"></script>
+<script src="01_balanced_regionalisation_files/libs/quarto-html/quarto.js"></script>
+<script src="01_balanced_regionalisation_files/libs/quarto-html/popper.min.js"></script>
+<script src="01_balanced_regionalisation_files/libs/quarto-html/tippy.umd.min.js"></script>
+<script src="01_balanced_regionalisation_files/libs/quarto-html/anchor.min.js"></script>
+<link href="01_balanced_regionalisation_files/libs/quarto-html/tippy.css" rel="stylesheet">
+<link href="01_balanced_regionalisation_files/libs/quarto-html/quarto-syntax-highlighting-29e2c20b02301cfff04dc8050bf30c7e.css" rel="stylesheet" id="quarto-text-highlighting-styles">
+<script src="01_balanced_regionalisation_files/libs/bootstrap/bootstrap.min.js"></script>
+<link href="01_balanced_regionalisation_files/libs/bootstrap/bootstrap-icons.css" rel="stylesheet">
+<link href="01_balanced_regionalisation_files/libs/bootstrap/bootstrap-b3344eded9742586a550ea0a0151afc3.min.css" rel="stylesheet" append-hash="true" id="quarto-bootstrap" data-mode="light">
+
+
+</head>
+
+<body class="fullcontent">
+
+<div id="quarto-content" class="page-columns page-rows-contents page-layout-article">
+
+<main class="content" id="quarto-document-content">
+
+<header id="title-block-header" class="quarto-title-block default">
+<div class="quarto-title">
+<h1 class="title">Balanced Spatial Regionalisation</h1>
+</div>
+
+
+
+<div class="quarto-title-meta">
+
+    <div>
+    <div class="quarto-title-meta-heading">Author</div>
+    <div class="quarto-title-meta-contents">
+             <p>Craig Simpkins </p>
+          </div>
+  </div>
+    
+    <div>
+    <div class="quarto-title-meta-heading">Published</div>
+    <div class="quarto-title-meta-contents">
+      <p class="date">September 8, 2025</p>
+    </div>
+  </div>
+  
+    
+  </div>
+  
+
+
+</header>
+
+
+<p>This notebook does stuff that I should fully describe later.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb1"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(sf)</span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(tidyverse)</span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(tmap)</span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(leaflet)</span>
+<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(viridis)</span>
+<span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(patchwork)</span>
+<span id="cb1-7"><a href="#cb1-7" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(gt)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb2"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Load business data. Choose the correct path depending on whether the code is</span></span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a><span class="co"># being run interactively or from the notebook.</span></span>
+<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a><span class="cf">if</span> (<span class="fu">interactive</span>()) {</span>
+<span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a>    be_sf <span class="ot">&lt;-</span> <span class="fu">st_read</span>(<span class="st">"data/new-zealand-business-demography-statistics-at-february-2020-.shp"</span>)</span>
+<span id="cb2-5"><a href="#cb2-5" aria-hidden="true" tabindex="-1"></a>} <span class="cf">else</span> {</span>
+<span id="cb2-6"><a href="#cb2-6" aria-hidden="true" tabindex="-1"></a>    be_sf <span class="ot">&lt;-</span> <span class="fu">st_read</span>(<span class="st">"../data/new-zealand-business-demography-statistics-at-february-2020-.shp"</span>)</span>
+<span id="cb2-7"><a href="#cb2-7" aria-hidden="true" tabindex="-1"></a>}</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>Reading layer `new-zealand-business-demography-statistics-at-february-2020-' from data source `C:\Users\simpk\OneDrive\Professional\Projects\balanced_spatial_regionisation\data\new-zealand-business-demography-statistics-at-february-2020-.shp' 
+  using driver `ESRI Shapefile'
+Simple feature collection with 2239 features and 48 fields
+Geometry type: MULTIPOLYGON
+Dimension:     XY
+Bounding box:  xmin: 1067061 ymin: 4701977 xmax: 2523320 ymax: 6220199
+Projected CRS: NZGD2000 / New Zealand Transverse Mercator 2000</code></pre>
+</div>
+<div class="sourceCode cell-code" id="cb4"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Display the first few rows of the data as a gt table</span></span>
+<span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a>be_sf_head <span class="ot">&lt;-</span> <span class="fu">head</span>(be_sf, <span class="dv">5</span>) <span class="sc">%&gt;%</span> </span>
+<span id="cb4-3"><a href="#cb4-3" aria-hidden="true" tabindex="-1"></a>    <span class="fu">st_drop_geometry</span>() <span class="sc">%&gt;%</span> </span>
+<span id="cb4-4"><a href="#cb4-4" aria-hidden="true" tabindex="-1"></a>    <span class="fu">gt</span>() <span class="sc">%&gt;%</span> </span>
+<span id="cb4-5"><a href="#cb4-5" aria-hidden="true" tabindex="-1"></a>    <span class="fu">tab_header</span>(<span class="at">title =</span> <span class="st">"First five rows of the business and employment data"</span>)</span>
+<span id="cb4-6"><a href="#cb4-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-7"><a href="#cb4-7" aria-hidden="true" tabindex="-1"></a>be_sf_head</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output-display">
+<div id="ylpdfsmtup" style="padding-left:0px;padding-right:0px;padding-top:10px;padding-bottom:10px;overflow-x:auto;overflow-y:auto;width:auto;height:auto;">
+<style>#ylpdfsmtup table {
+  font-family: system-ui, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol', 'Noto Color Emoji';
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+#ylpdfsmtup thead, #ylpdfsmtup tbody, #ylpdfsmtup tfoot, #ylpdfsmtup tr, #ylpdfsmtup td, #ylpdfsmtup th {
+  border-style: none;
+}
+
+#ylpdfsmtup p {
+  margin: 0;
+  padding: 0;
+}
+
+#ylpdfsmtup .gt_table {
+  display: table;
+  border-collapse: collapse;
+  line-height: normal;
+  margin-left: auto;
+  margin-right: auto;
+  color: #333333;
+  font-size: 16px;
+  font-weight: normal;
+  font-style: normal;
+  background-color: #FFFFFF;
+  width: auto;
+  border-top-style: solid;
+  border-top-width: 2px;
+  border-top-color: #A8A8A8;
+  border-right-style: none;
+  border-right-width: 2px;
+  border-right-color: #D3D3D3;
+  border-bottom-style: solid;
+  border-bottom-width: 2px;
+  border-bottom-color: #A8A8A8;
+  border-left-style: none;
+  border-left-width: 2px;
+  border-left-color: #D3D3D3;
+}
+
+#ylpdfsmtup .gt_caption {
+  padding-top: 4px;
+  padding-bottom: 4px;
+}
+
+#ylpdfsmtup .gt_title {
+  color: #333333;
+  font-size: 125%;
+  font-weight: initial;
+  padding-top: 4px;
+  padding-bottom: 4px;
+  padding-left: 5px;
+  padding-right: 5px;
+  border-bottom-color: #FFFFFF;
+  border-bottom-width: 0;
+}
+
+#ylpdfsmtup .gt_subtitle {
+  color: #333333;
+  font-size: 85%;
+  font-weight: initial;
+  padding-top: 3px;
+  padding-bottom: 5px;
+  padding-left: 5px;
+  padding-right: 5px;
+  border-top-color: #FFFFFF;
+  border-top-width: 0;
+}
+
+#ylpdfsmtup .gt_heading {
+  background-color: #FFFFFF;
+  text-align: center;
+  border-bottom-color: #FFFFFF;
+  border-left-style: none;
+  border-left-width: 1px;
+  border-left-color: #D3D3D3;
+  border-right-style: none;
+  border-right-width: 1px;
+  border-right-color: #D3D3D3;
+}
+
+#ylpdfsmtup .gt_bottom_border {
+  border-bottom-style: solid;
+  border-bottom-width: 2px;
+  border-bottom-color: #D3D3D3;
+}
+
+#ylpdfsmtup .gt_col_headings {
+  border-top-style: solid;
+  border-top-width: 2px;
+  border-top-color: #D3D3D3;
+  border-bottom-style: solid;
+  border-bottom-width: 2px;
+  border-bottom-color: #D3D3D3;
+  border-left-style: none;
+  border-left-width: 1px;
+  border-left-color: #D3D3D3;
+  border-right-style: none;
+  border-right-width: 1px;
+  border-right-color: #D3D3D3;
+}
+
+#ylpdfsmtup .gt_col_heading {
+  color: #333333;
+  background-color: #FFFFFF;
+  font-size: 100%;
+  font-weight: normal;
+  text-transform: inherit;
+  border-left-style: none;
+  border-left-width: 1px;
+  border-left-color: #D3D3D3;
+  border-right-style: none;
+  border-right-width: 1px;
+  border-right-color: #D3D3D3;
+  vertical-align: bottom;
+  padding-top: 5px;
+  padding-bottom: 6px;
+  padding-left: 5px;
+  padding-right: 5px;
+  overflow-x: hidden;
+}
+
+#ylpdfsmtup .gt_column_spanner_outer {
+  color: #333333;
+  background-color: #FFFFFF;
+  font-size: 100%;
+  font-weight: normal;
+  text-transform: inherit;
+  padding-top: 0;
+  padding-bottom: 0;
+  padding-left: 4px;
+  padding-right: 4px;
+}
+
+#ylpdfsmtup .gt_column_spanner_outer:first-child {
+  padding-left: 0;
+}
+
+#ylpdfsmtup .gt_column_spanner_outer:last-child {
+  padding-right: 0;
+}
+
+#ylpdfsmtup .gt_column_spanner {
+  border-bottom-style: solid;
+  border-bottom-width: 2px;
+  border-bottom-color: #D3D3D3;
+  vertical-align: bottom;
+  padding-top: 5px;
+  padding-bottom: 5px;
+  overflow-x: hidden;
+  display: inline-block;
+  width: 100%;
+}
+
+#ylpdfsmtup .gt_spanner_row {
+  border-bottom-style: hidden;
+}
+
+#ylpdfsmtup .gt_group_heading {
+  padding-top: 8px;
+  padding-bottom: 8px;
+  padding-left: 5px;
+  padding-right: 5px;
+  color: #333333;
+  background-color: #FFFFFF;
+  font-size: 100%;
+  font-weight: initial;
+  text-transform: inherit;
+  border-top-style: solid;
+  border-top-width: 2px;
+  border-top-color: #D3D3D3;
+  border-bottom-style: solid;
+  border-bottom-width: 2px;
+  border-bottom-color: #D3D3D3;
+  border-left-style: none;
+  border-left-width: 1px;
+  border-left-color: #D3D3D3;
+  border-right-style: none;
+  border-right-width: 1px;
+  border-right-color: #D3D3D3;
+  vertical-align: middle;
+  text-align: left;
+}
+
+#ylpdfsmtup .gt_empty_group_heading {
+  padding: 0.5px;
+  color: #333333;
+  background-color: #FFFFFF;
+  font-size: 100%;
+  font-weight: initial;
+  border-top-style: solid;
+  border-top-width: 2px;
+  border-top-color: #D3D3D3;
+  border-bottom-style: solid;
+  border-bottom-width: 2px;
+  border-bottom-color: #D3D3D3;
+  vertical-align: middle;
+}
+
+#ylpdfsmtup .gt_from_md > :first-child {
+  margin-top: 0;
+}
+
+#ylpdfsmtup .gt_from_md > :last-child {
+  margin-bottom: 0;
+}
+
+#ylpdfsmtup .gt_row {
+  padding-top: 8px;
+  padding-bottom: 8px;
+  padding-left: 5px;
+  padding-right: 5px;
+  margin: 10px;
+  border-top-style: solid;
+  border-top-width: 1px;
+  border-top-color: #D3D3D3;
+  border-left-style: none;
+  border-left-width: 1px;
+  border-left-color: #D3D3D3;
+  border-right-style: none;
+  border-right-width: 1px;
+  border-right-color: #D3D3D3;
+  vertical-align: middle;
+  overflow-x: hidden;
+}
+
+#ylpdfsmtup .gt_stub {
+  color: #333333;
+  background-color: #FFFFFF;
+  font-size: 100%;
+  font-weight: initial;
+  text-transform: inherit;
+  border-right-style: solid;
+  border-right-width: 2px;
+  border-right-color: #D3D3D3;
+  padding-left: 5px;
+  padding-right: 5px;
+}
+
+#ylpdfsmtup .gt_stub_row_group {
+  color: #333333;
+  background-color: #FFFFFF;
+  font-size: 100%;
+  font-weight: initial;
+  text-transform: inherit;
+  border-right-style: solid;
+  border-right-width: 2px;
+  border-right-color: #D3D3D3;
+  padding-left: 5px;
+  padding-right: 5px;
+  vertical-align: top;
+}
+
+#ylpdfsmtup .gt_row_group_first td {
+  border-top-width: 2px;
+}
+
+#ylpdfsmtup .gt_row_group_first th {
+  border-top-width: 2px;
+}
+
+#ylpdfsmtup .gt_summary_row {
+  color: #333333;
+  background-color: #FFFFFF;
+  text-transform: inherit;
+  padding-top: 8px;
+  padding-bottom: 8px;
+  padding-left: 5px;
+  padding-right: 5px;
+}
+
+#ylpdfsmtup .gt_first_summary_row {
+  border-top-style: solid;
+  border-top-color: #D3D3D3;
+}
+
+#ylpdfsmtup .gt_first_summary_row.thick {
+  border-top-width: 2px;
+}
+
+#ylpdfsmtup .gt_last_summary_row {
+  padding-top: 8px;
+  padding-bottom: 8px;
+  padding-left: 5px;
+  padding-right: 5px;
+  border-bottom-style: solid;
+  border-bottom-width: 2px;
+  border-bottom-color: #D3D3D3;
+}
+
+#ylpdfsmtup .gt_grand_summary_row {
+  color: #333333;
+  background-color: #FFFFFF;
+  text-transform: inherit;
+  padding-top: 8px;
+  padding-bottom: 8px;
+  padding-left: 5px;
+  padding-right: 5px;
+}
+
+#ylpdfsmtup .gt_first_grand_summary_row {
+  padding-top: 8px;
+  padding-bottom: 8px;
+  padding-left: 5px;
+  padding-right: 5px;
+  border-top-style: double;
+  border-top-width: 6px;
+  border-top-color: #D3D3D3;
+}
+
+#ylpdfsmtup .gt_last_grand_summary_row_top {
+  padding-top: 8px;
+  padding-bottom: 8px;
+  padding-left: 5px;
+  padding-right: 5px;
+  border-bottom-style: double;
+  border-bottom-width: 6px;
+  border-bottom-color: #D3D3D3;
+}
+
+#ylpdfsmtup .gt_striped {
+  background-color: rgba(128, 128, 128, 0.05);
+}
+
+#ylpdfsmtup .gt_table_body {
+  border-top-style: solid;
+  border-top-width: 2px;
+  border-top-color: #D3D3D3;
+  border-bottom-style: solid;
+  border-bottom-width: 2px;
+  border-bottom-color: #D3D3D3;
+}
+
+#ylpdfsmtup .gt_footnotes {
+  color: #333333;
+  background-color: #FFFFFF;
+  border-bottom-style: none;
+  border-bottom-width: 2px;
+  border-bottom-color: #D3D3D3;
+  border-left-style: none;
+  border-left-width: 2px;
+  border-left-color: #D3D3D3;
+  border-right-style: none;
+  border-right-width: 2px;
+  border-right-color: #D3D3D3;
+}
+
+#ylpdfsmtup .gt_footnote {
+  margin: 0px;
+  font-size: 90%;
+  padding-top: 4px;
+  padding-bottom: 4px;
+  padding-left: 5px;
+  padding-right: 5px;
+}
+
+#ylpdfsmtup .gt_sourcenotes {
+  color: #333333;
+  background-color: #FFFFFF;
+  border-bottom-style: none;
+  border-bottom-width: 2px;
+  border-bottom-color: #D3D3D3;
+  border-left-style: none;
+  border-left-width: 2px;
+  border-left-color: #D3D3D3;
+  border-right-style: none;
+  border-right-width: 2px;
+  border-right-color: #D3D3D3;
+}
+
+#ylpdfsmtup .gt_sourcenote {
+  font-size: 90%;
+  padding-top: 4px;
+  padding-bottom: 4px;
+  padding-left: 5px;
+  padding-right: 5px;
+}
+
+#ylpdfsmtup .gt_left {
+  text-align: left;
+}
+
+#ylpdfsmtup .gt_center {
+  text-align: center;
+}
+
+#ylpdfsmtup .gt_right {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
+#ylpdfsmtup .gt_font_normal {
+  font-weight: normal;
+}
+
+#ylpdfsmtup .gt_font_bold {
+  font-weight: bold;
+}
+
+#ylpdfsmtup .gt_font_italic {
+  font-style: italic;
+}
+
+#ylpdfsmtup .gt_super {
+  font-size: 65%;
+}
+
+#ylpdfsmtup .gt_footnote_marks {
+  font-size: 75%;
+  vertical-align: 0.4em;
+  position: initial;
+}
+
+#ylpdfsmtup .gt_asterisk {
+  font-size: 100%;
+  vertical-align: 0;
+}
+
+#ylpdfsmtup .gt_indent_1 {
+  text-indent: 5px;
+}
+
+#ylpdfsmtup .gt_indent_2 {
+  text-indent: 10px;
+}
+
+#ylpdfsmtup .gt_indent_3 {
+  text-indent: 15px;
+}
+
+#ylpdfsmtup .gt_indent_4 {
+  text-indent: 20px;
+}
+
+#ylpdfsmtup .gt_indent_5 {
+  text-indent: 25px;
+}
+
+#ylpdfsmtup .katex-display {
+  display: inline-flex !important;
+  margin-bottom: 0.75em !important;
+}
+
+#ylpdfsmtup div.Reactable > div.rt-table > div.rt-thead > div.rt-tr.rt-tr-group-header > div.rt-th-group:after {
+  height: 0px !important;
+}
+</style>
+
+<table class="gt_table caption-top table table-sm table-striped small" data-quarto-postprocess="true" data-quarto-disable-processing="false" data-quarto-bootstrap="false">
+<thead>
+<tr class="gt_heading header">
+<th colspan="48" class="gt_heading gt_title gt_font_normal gt_bottom_border">First five rows of the business and employment data</th>
+</tr>
+<tr class="gt_col_headings even">
+<th id="SA22020_V1" class="gt_col_heading gt_columns_bottom_border gt_right" data-quarto-table-cell-role="th" scope="col">SA22020_V1</th>
+<th id="SA22020__1" class="gt_col_heading gt_columns_bottom_border gt_left" data-quarto-table-cell-role="th" scope="col">SA22020__1</th>
+<th id="SA22020__2" class="gt_col_heading gt_columns_bottom_border gt_left" data-quarto-table-cell-role="th" scope="col">SA22020__2</th>
+<th id="LAND_AREA_" class="gt_col_heading gt_columns_bottom_border gt_right" data-quarto-table-cell-role="th" scope="col">LAND_AREA_</th>
+<th id="AREA_SQ_KM" class="gt_col_heading gt_columns_bottom_border gt_right" data-quarto-table-cell-role="th" scope="col">AREA_SQ_KM</th>
+<th id="SHAPE_STAr" class="gt_col_heading gt_columns_bottom_border gt_right" data-quarto-table-cell-role="th" scope="col">SHAPE_STAr</th>
+<th id="SHAPE_STLe" class="gt_col_heading gt_columns_bottom_border gt_right" data-quarto-table-cell-role="th" scope="col">SHAPE_STLe</th>
+<th id="A_geograph" class="gt_col_heading gt_columns_bottom_border gt_right" data-quarto-table-cell-role="th" scope="col">A_geograph</th>
+<th id="A_employee" class="gt_col_heading gt_columns_bottom_border gt_right" data-quarto-table-cell-role="th" scope="col">A_employee</th>
+<th id="B_geograph" class="gt_col_heading gt_columns_bottom_border gt_right" data-quarto-table-cell-role="th" scope="col">B_geograph</th>
+<th id="B_employee" class="gt_col_heading gt_columns_bottom_border gt_right" data-quarto-table-cell-role="th" scope="col">B_employee</th>
+<th id="C_geograph" class="gt_col_heading gt_columns_bottom_border gt_right" data-quarto-table-cell-role="th" scope="col">C_geograph</th>
+<th id="C_employee" class="gt_col_heading gt_columns_bottom_border gt_right" data-quarto-table-cell-role="th" scope="col">C_employee</th>
+<th id="D_geograph" class="gt_col_heading gt_columns_bottom_border gt_right" data-quarto-table-cell-role="th" scope="col">D_geograph</th>
+<th id="D_employee" class="gt_col_heading gt_columns_bottom_border gt_right" data-quarto-table-cell-role="th" scope="col">D_employee</th>
+<th id="E_geograph" class="gt_col_heading gt_columns_bottom_border gt_right" data-quarto-table-cell-role="th" scope="col">E_geograph</th>
+<th id="E_employee" class="gt_col_heading gt_columns_bottom_border gt_right" data-quarto-table-cell-role="th" scope="col">E_employee</th>
+<th id="F_geograph" class="gt_col_heading gt_columns_bottom_border gt_right" data-quarto-table-cell-role="th" scope="col">F_geograph</th>
+<th id="F_employee" class="gt_col_heading gt_columns_bottom_border gt_right" data-quarto-table-cell-role="th" scope="col">F_employee</th>
+<th id="G_geograph" class="gt_col_heading gt_columns_bottom_border gt_right" data-quarto-table-cell-role="th" scope="col">G_geograph</th>
+<th id="G_employee" class="gt_col_heading gt_columns_bottom_border gt_right" data-quarto-table-cell-role="th" scope="col">G_employee</th>
+<th id="H_geograph" class="gt_col_heading gt_columns_bottom_border gt_right" data-quarto-table-cell-role="th" scope="col">H_geograph</th>
+<th id="H_employee" class="gt_col_heading gt_columns_bottom_border gt_right" data-quarto-table-cell-role="th" scope="col">H_employee</th>
+<th id="I_geograph" class="gt_col_heading gt_columns_bottom_border gt_right" data-quarto-table-cell-role="th" scope="col">I_geograph</th>
+<th id="I_employee" class="gt_col_heading gt_columns_bottom_border gt_right" data-quarto-table-cell-role="th" scope="col">I_employee</th>
+<th id="J_geograph" class="gt_col_heading gt_columns_bottom_border gt_right" data-quarto-table-cell-role="th" scope="col">J_geograph</th>
+<th id="J_employee" class="gt_col_heading gt_columns_bottom_border gt_right" data-quarto-table-cell-role="th" scope="col">J_employee</th>
+<th id="K_geograph" class="gt_col_heading gt_columns_bottom_border gt_right" data-quarto-table-cell-role="th" scope="col">K_geograph</th>
+<th id="K_employee" class="gt_col_heading gt_columns_bottom_border gt_right" data-quarto-table-cell-role="th" scope="col">K_employee</th>
+<th id="L_geograph" class="gt_col_heading gt_columns_bottom_border gt_right" data-quarto-table-cell-role="th" scope="col">L_geograph</th>
+<th id="L_employee" class="gt_col_heading gt_columns_bottom_border gt_right" data-quarto-table-cell-role="th" scope="col">L_employee</th>
+<th id="M_geograph" class="gt_col_heading gt_columns_bottom_border gt_right" data-quarto-table-cell-role="th" scope="col">M_geograph</th>
+<th id="M_employee" class="gt_col_heading gt_columns_bottom_border gt_right" data-quarto-table-cell-role="th" scope="col">M_employee</th>
+<th id="N_geograph" class="gt_col_heading gt_columns_bottom_border gt_right" data-quarto-table-cell-role="th" scope="col">N_geograph</th>
+<th id="N_employee" class="gt_col_heading gt_columns_bottom_border gt_right" data-quarto-table-cell-role="th" scope="col">N_employee</th>
+<th id="O_geograph" class="gt_col_heading gt_columns_bottom_border gt_right" data-quarto-table-cell-role="th" scope="col">O_geograph</th>
+<th id="O_employee" class="gt_col_heading gt_columns_bottom_border gt_right" data-quarto-table-cell-role="th" scope="col">O_employee</th>
+<th id="P_geograph" class="gt_col_heading gt_columns_bottom_border gt_right" data-quarto-table-cell-role="th" scope="col">P_geograph</th>
+<th id="P_employee" class="gt_col_heading gt_columns_bottom_border gt_right" data-quarto-table-cell-role="th" scope="col">P_employee</th>
+<th id="Q_geograph" class="gt_col_heading gt_columns_bottom_border gt_right" data-quarto-table-cell-role="th" scope="col">Q_geograph</th>
+<th id="Q_employee" class="gt_col_heading gt_columns_bottom_border gt_right" data-quarto-table-cell-role="th" scope="col">Q_employee</th>
+<th id="R_geograph" class="gt_col_heading gt_columns_bottom_border gt_right" data-quarto-table-cell-role="th" scope="col">R_geograph</th>
+<th id="R_employee" class="gt_col_heading gt_columns_bottom_border gt_right" data-quarto-table-cell-role="th" scope="col">R_employee</th>
+<th id="S_geograph" class="gt_col_heading gt_columns_bottom_border gt_right" data-quarto-table-cell-role="th" scope="col">S_geograph</th>
+<th id="S_employee" class="gt_col_heading gt_columns_bottom_border gt_right" data-quarto-table-cell-role="th" scope="col">S_employee</th>
+<th id="Total_geog" class="gt_col_heading gt_columns_bottom_border gt_right" data-quarto-table-cell-role="th" scope="col">Total_geog</th>
+<th id="Total_empl" class="gt_col_heading gt_columns_bottom_border gt_right" data-quarto-table-cell-role="th" scope="col">Total_empl</th>
+<th id="SHAPE_Leng" class="gt_col_heading gt_columns_bottom_border gt_right" data-quarto-table-cell-role="th" scope="col">SHAPE_Leng</th>
+</tr>
+</thead>
+<tbody class="gt_table_body">
+<tr class="odd">
+<td class="gt_row gt_right" headers="SA22020_V1">100100</td>
+<td class="gt_row gt_left" headers="SA22020__1">North Cape</td>
+<td class="gt_row gt_left" headers="SA22020__2">North Cape</td>
+<td class="gt_row gt_right" headers="LAND_AREA_">829.0817</td>
+<td class="gt_row gt_right" headers="AREA_SQ_KM">829.0817</td>
+<td class="gt_row gt_right" headers="SHAPE_STAr">829080140</td>
+<td class="gt_row gt_right" headers="SHAPE_STLe">415962.3</td>
+<td class="gt_row gt_right" headers="A_geograph">84</td>
+<td class="gt_row gt_right" headers="A_employee">250</td>
+<td class="gt_row gt_right" headers="B_geograph">NA</td>
+<td class="gt_row gt_right" headers="B_employee">NA</td>
+<td class="gt_row gt_right" headers="C_geograph">3</td>
+<td class="gt_row gt_right" headers="C_employee">6</td>
+<td class="gt_row gt_right" headers="D_geograph">NA</td>
+<td class="gt_row gt_right" headers="D_employee">NA</td>
+<td class="gt_row gt_right" headers="E_geograph">12</td>
+<td class="gt_row gt_right" headers="E_employee">3</td>
+<td class="gt_row gt_right" headers="F_geograph">0</td>
+<td class="gt_row gt_right" headers="F_employee">0</td>
+<td class="gt_row gt_right" headers="G_geograph">6</td>
+<td class="gt_row gt_right" headers="G_employee">65</td>
+<td class="gt_row gt_right" headers="H_geograph">9</td>
+<td class="gt_row gt_right" headers="H_employee">35</td>
+<td class="gt_row gt_right" headers="I_geograph">3</td>
+<td class="gt_row gt_right" headers="I_employee">15</td>
+<td class="gt_row gt_right" headers="J_geograph">NA</td>
+<td class="gt_row gt_right" headers="J_employee">NA</td>
+<td class="gt_row gt_right" headers="K_geograph">3</td>
+<td class="gt_row gt_right" headers="K_employee">0</td>
+<td class="gt_row gt_right" headers="L_geograph">33</td>
+<td class="gt_row gt_right" headers="L_employee">9</td>
+<td class="gt_row gt_right" headers="M_geograph">6</td>
+<td class="gt_row gt_right" headers="M_employee">0</td>
+<td class="gt_row gt_right" headers="N_geograph">6</td>
+<td class="gt_row gt_right" headers="N_employee">50</td>
+<td class="gt_row gt_right" headers="O_geograph">3</td>
+<td class="gt_row gt_right" headers="O_employee">3</td>
+<td class="gt_row gt_right" headers="P_geograph">6</td>
+<td class="gt_row gt_right" headers="P_employee">50</td>
+<td class="gt_row gt_right" headers="Q_geograph">9</td>
+<td class="gt_row gt_right" headers="Q_employee">45</td>
+<td class="gt_row gt_right" headers="R_geograph">3</td>
+<td class="gt_row gt_right" headers="R_employee">9</td>
+<td class="gt_row gt_right" headers="S_geograph">6</td>
+<td class="gt_row gt_right" headers="S_employee">12</td>
+<td class="gt_row gt_right" headers="Total_geog">198</td>
+<td class="gt_row gt_right" headers="Total_empl">550</td>
+<td class="gt_row gt_right" headers="SHAPE_Leng">415962.3</td>
+</tr>
+<tr class="even">
+<td class="gt_row gt_right" headers="SA22020_V1">100200</td>
+<td class="gt_row gt_left" headers="SA22020__1">Rangaunu Harbour</td>
+<td class="gt_row gt_left" headers="SA22020__2">Rangaunu Harbour</td>
+<td class="gt_row gt_right" headers="LAND_AREA_">273.9365</td>
+<td class="gt_row gt_right" headers="AREA_SQ_KM">273.9365</td>
+<td class="gt_row gt_right" headers="SHAPE_STAr">274007486</td>
+<td class="gt_row gt_right" headers="SHAPE_STLe">149155.4</td>
+<td class="gt_row gt_right" headers="A_geograph">132</td>
+<td class="gt_row gt_right" headers="A_employee">240</td>
+<td class="gt_row gt_right" headers="B_geograph">NA</td>
+<td class="gt_row gt_right" headers="B_employee">NA</td>
+<td class="gt_row gt_right" headers="C_geograph">9</td>
+<td class="gt_row gt_right" headers="C_employee">50</td>
+<td class="gt_row gt_right" headers="D_geograph">3</td>
+<td class="gt_row gt_right" headers="D_employee">0</td>
+<td class="gt_row gt_right" headers="E_geograph">36</td>
+<td class="gt_row gt_right" headers="E_employee">35</td>
+<td class="gt_row gt_right" headers="F_geograph">6</td>
+<td class="gt_row gt_right" headers="F_employee">6</td>
+<td class="gt_row gt_right" headers="G_geograph">15</td>
+<td class="gt_row gt_right" headers="G_employee">65</td>
+<td class="gt_row gt_right" headers="H_geograph">6</td>
+<td class="gt_row gt_right" headers="H_employee">6</td>
+<td class="gt_row gt_right" headers="I_geograph">6</td>
+<td class="gt_row gt_right" headers="I_employee">35</td>
+<td class="gt_row gt_right" headers="J_geograph">NA</td>
+<td class="gt_row gt_right" headers="J_employee">NA</td>
+<td class="gt_row gt_right" headers="K_geograph">NA</td>
+<td class="gt_row gt_right" headers="K_employee">NA</td>
+<td class="gt_row gt_right" headers="L_geograph">30</td>
+<td class="gt_row gt_right" headers="L_employee">25</td>
+<td class="gt_row gt_right" headers="M_geograph">15</td>
+<td class="gt_row gt_right" headers="M_employee">6</td>
+<td class="gt_row gt_right" headers="N_geograph">6</td>
+<td class="gt_row gt_right" headers="N_employee">45</td>
+<td class="gt_row gt_right" headers="O_geograph">3</td>
+<td class="gt_row gt_right" headers="O_employee">0</td>
+<td class="gt_row gt_right" headers="P_geograph">9</td>
+<td class="gt_row gt_right" headers="P_employee">45</td>
+<td class="gt_row gt_right" headers="Q_geograph">6</td>
+<td class="gt_row gt_right" headers="Q_employee">18</td>
+<td class="gt_row gt_right" headers="R_geograph">6</td>
+<td class="gt_row gt_right" headers="R_employee">0</td>
+<td class="gt_row gt_right" headers="S_geograph">9</td>
+<td class="gt_row gt_right" headers="S_employee">15</td>
+<td class="gt_row gt_right" headers="Total_geog">291</td>
+<td class="gt_row gt_right" headers="Total_empl">590</td>
+<td class="gt_row gt_right" headers="SHAPE_Leng">149155.4</td>
+</tr>
+<tr class="odd">
+<td class="gt_row gt_right" headers="SA22020_V1">101900</td>
+<td class="gt_row gt_left" headers="SA22020__1">Kaeo</td>
+<td class="gt_row gt_left" headers="SA22020__2">Kaeo</td>
+<td class="gt_row gt_right" headers="LAND_AREA_">255.5597</td>
+<td class="gt_row gt_right" headers="AREA_SQ_KM">255.5597</td>
+<td class="gt_row gt_right" headers="SHAPE_STAr">255560407</td>
+<td class="gt_row gt_right" headers="SHAPE_STLe">100821.3</td>
+<td class="gt_row gt_right" headers="A_geograph">42</td>
+<td class="gt_row gt_right" headers="A_employee">15</td>
+<td class="gt_row gt_right" headers="B_geograph">NA</td>
+<td class="gt_row gt_right" headers="B_employee">NA</td>
+<td class="gt_row gt_right" headers="C_geograph">6</td>
+<td class="gt_row gt_right" headers="C_employee">0</td>
+<td class="gt_row gt_right" headers="D_geograph">NA</td>
+<td class="gt_row gt_right" headers="D_employee">NA</td>
+<td class="gt_row gt_right" headers="E_geograph">18</td>
+<td class="gt_row gt_right" headers="E_employee">3</td>
+<td class="gt_row gt_right" headers="F_geograph">3</td>
+<td class="gt_row gt_right" headers="F_employee">3</td>
+<td class="gt_row gt_right" headers="G_geograph">0</td>
+<td class="gt_row gt_right" headers="G_employee">15</td>
+<td class="gt_row gt_right" headers="H_geograph">3</td>
+<td class="gt_row gt_right" headers="H_employee">6</td>
+<td class="gt_row gt_right" headers="I_geograph">3</td>
+<td class="gt_row gt_right" headers="I_employee">15</td>
+<td class="gt_row gt_right" headers="J_geograph">0</td>
+<td class="gt_row gt_right" headers="J_employee">0</td>
+<td class="gt_row gt_right" headers="K_geograph">3</td>
+<td class="gt_row gt_right" headers="K_employee">0</td>
+<td class="gt_row gt_right" headers="L_geograph">9</td>
+<td class="gt_row gt_right" headers="L_employee">0</td>
+<td class="gt_row gt_right" headers="M_geograph">6</td>
+<td class="gt_row gt_right" headers="M_employee">0</td>
+<td class="gt_row gt_right" headers="N_geograph">NA</td>
+<td class="gt_row gt_right" headers="N_employee">NA</td>
+<td class="gt_row gt_right" headers="O_geograph">3</td>
+<td class="gt_row gt_right" headers="O_employee">3</td>
+<td class="gt_row gt_right" headers="P_geograph">6</td>
+<td class="gt_row gt_right" headers="P_employee">45</td>
+<td class="gt_row gt_right" headers="Q_geograph">3</td>
+<td class="gt_row gt_right" headers="Q_employee">75</td>
+<td class="gt_row gt_right" headers="R_geograph">3</td>
+<td class="gt_row gt_right" headers="R_employee">0</td>
+<td class="gt_row gt_right" headers="S_geograph">6</td>
+<td class="gt_row gt_right" headers="S_employee">9</td>
+<td class="gt_row gt_right" headers="Total_geog">117</td>
+<td class="gt_row gt_right" headers="Total_empl">190</td>
+<td class="gt_row gt_right" headers="SHAPE_Leng">100821.3</td>
+</tr>
+<tr class="even">
+<td class="gt_row gt_right" headers="SA22020_V1">102000</td>
+<td class="gt_row gt_left" headers="SA22020__1">Omahuta Forest-Horeke</td>
+<td class="gt_row gt_left" headers="SA22020__2">Omahuta Forest-Horeke</td>
+<td class="gt_row gt_right" headers="LAND_AREA_">463.5517</td>
+<td class="gt_row gt_right" headers="AREA_SQ_KM">463.5517</td>
+<td class="gt_row gt_right" headers="SHAPE_STAr">463550013</td>
+<td class="gt_row gt_right" headers="SHAPE_STLe">213722.7</td>
+<td class="gt_row gt_right" headers="A_geograph">81</td>
+<td class="gt_row gt_right" headers="A_employee">35</td>
+<td class="gt_row gt_right" headers="B_geograph">NA</td>
+<td class="gt_row gt_right" headers="B_employee">NA</td>
+<td class="gt_row gt_right" headers="C_geograph">NA</td>
+<td class="gt_row gt_right" headers="C_employee">NA</td>
+<td class="gt_row gt_right" headers="D_geograph">NA</td>
+<td class="gt_row gt_right" headers="D_employee">NA</td>
+<td class="gt_row gt_right" headers="E_geograph">6</td>
+<td class="gt_row gt_right" headers="E_employee">0</td>
+<td class="gt_row gt_right" headers="F_geograph">NA</td>
+<td class="gt_row gt_right" headers="F_employee">NA</td>
+<td class="gt_row gt_right" headers="G_geograph">0</td>
+<td class="gt_row gt_right" headers="G_employee">0</td>
+<td class="gt_row gt_right" headers="H_geograph">0</td>
+<td class="gt_row gt_right" headers="H_employee">12</td>
+<td class="gt_row gt_right" headers="I_geograph">0</td>
+<td class="gt_row gt_right" headers="I_employee">0</td>
+<td class="gt_row gt_right" headers="J_geograph">0</td>
+<td class="gt_row gt_right" headers="J_employee">9</td>
+<td class="gt_row gt_right" headers="K_geograph">0</td>
+<td class="gt_row gt_right" headers="K_employee">0</td>
+<td class="gt_row gt_right" headers="L_geograph">24</td>
+<td class="gt_row gt_right" headers="L_employee">0</td>
+<td class="gt_row gt_right" headers="M_geograph">3</td>
+<td class="gt_row gt_right" headers="M_employee">0</td>
+<td class="gt_row gt_right" headers="N_geograph">3</td>
+<td class="gt_row gt_right" headers="N_employee">0</td>
+<td class="gt_row gt_right" headers="O_geograph">NA</td>
+<td class="gt_row gt_right" headers="O_employee">NA</td>
+<td class="gt_row gt_right" headers="P_geograph">6</td>
+<td class="gt_row gt_right" headers="P_employee">25</td>
+<td class="gt_row gt_right" headers="Q_geograph">NA</td>
+<td class="gt_row gt_right" headers="Q_employee">NA</td>
+<td class="gt_row gt_right" headers="R_geograph">3</td>
+<td class="gt_row gt_right" headers="R_employee">3</td>
+<td class="gt_row gt_right" headers="S_geograph">3</td>
+<td class="gt_row gt_right" headers="S_employee">0</td>
+<td class="gt_row gt_right" headers="Total_geog">135</td>
+<td class="gt_row gt_right" headers="Total_empl">85</td>
+<td class="gt_row gt_right" headers="SHAPE_Leng">213722.7</td>
+</tr>
+<tr class="odd">
+<td class="gt_row gt_right" headers="SA22020_V1">102100</td>
+<td class="gt_row gt_left" headers="SA22020__1">Hokianga South</td>
+<td class="gt_row gt_left" headers="SA22020__2">Hokianga South</td>
+<td class="gt_row gt_right" headers="LAND_AREA_">126.0472</td>
+<td class="gt_row gt_right" headers="AREA_SQ_KM">126.0472</td>
+<td class="gt_row gt_right" headers="SHAPE_STAr">126045921</td>
+<td class="gt_row gt_right" headers="SHAPE_STLe">145583.9</td>
+<td class="gt_row gt_right" headers="A_geograph">42</td>
+<td class="gt_row gt_right" headers="A_employee">9</td>
+<td class="gt_row gt_right" headers="B_geograph">NA</td>
+<td class="gt_row gt_right" headers="B_employee">NA</td>
+<td class="gt_row gt_right" headers="C_geograph">6</td>
+<td class="gt_row gt_right" headers="C_employee">3</td>
+<td class="gt_row gt_right" headers="D_geograph">NA</td>
+<td class="gt_row gt_right" headers="D_employee">NA</td>
+<td class="gt_row gt_right" headers="E_geograph">9</td>
+<td class="gt_row gt_right" headers="E_employee">0</td>
+<td class="gt_row gt_right" headers="F_geograph">0</td>
+<td class="gt_row gt_right" headers="F_employee">0</td>
+<td class="gt_row gt_right" headers="G_geograph">3</td>
+<td class="gt_row gt_right" headers="G_employee">15</td>
+<td class="gt_row gt_right" headers="H_geograph">12</td>
+<td class="gt_row gt_right" headers="H_employee">18</td>
+<td class="gt_row gt_right" headers="I_geograph">3</td>
+<td class="gt_row gt_right" headers="I_employee">12</td>
+<td class="gt_row gt_right" headers="J_geograph">0</td>
+<td class="gt_row gt_right" headers="J_employee">0</td>
+<td class="gt_row gt_right" headers="K_geograph">3</td>
+<td class="gt_row gt_right" headers="K_employee">0</td>
+<td class="gt_row gt_right" headers="L_geograph">12</td>
+<td class="gt_row gt_right" headers="L_employee">0</td>
+<td class="gt_row gt_right" headers="M_geograph">9</td>
+<td class="gt_row gt_right" headers="M_employee">0</td>
+<td class="gt_row gt_right" headers="N_geograph">3</td>
+<td class="gt_row gt_right" headers="N_employee">6</td>
+<td class="gt_row gt_right" headers="O_geograph">6</td>
+<td class="gt_row gt_right" headers="O_employee">3</td>
+<td class="gt_row gt_right" headers="P_geograph">6</td>
+<td class="gt_row gt_right" headers="P_employee">55</td>
+<td class="gt_row gt_right" headers="Q_geograph">0</td>
+<td class="gt_row gt_right" headers="Q_employee">180</td>
+<td class="gt_row gt_right" headers="R_geograph">0</td>
+<td class="gt_row gt_right" headers="R_employee">3</td>
+<td class="gt_row gt_right" headers="S_geograph">0</td>
+<td class="gt_row gt_right" headers="S_employee">0</td>
+<td class="gt_row gt_right" headers="Total_geog">120</td>
+<td class="gt_row gt_right" headers="Total_empl">300</td>
+<td class="gt_row gt_right" headers="SHAPE_Leng">145583.9</td>
+</tr>
+</tbody>
+</table>
+
+</div>
+</div>
+<div class="sourceCode cell-code" id="cb5"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="fu">rm</span>(be_sf_head)</span>
+<span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-3"><a href="#cb5-3" aria-hidden="true" tabindex="-1"></a><span class="co"># Select only relevant columns</span></span>
+<span id="cb5-4"><a href="#cb5-4" aria-hidden="true" tabindex="-1"></a>be_sf <span class="ot">&lt;-</span> be_sf <span class="sc">%&gt;%</span></span>
+<span id="cb5-5"><a href="#cb5-5" aria-hidden="true" tabindex="-1"></a>  <span class="fu">select</span>(SA22020_V1, SA22020__1, Total_geog, Total_empl, LAND_AREA_) <span class="sc">%&gt;%</span></span>
+<span id="cb5-6"><a href="#cb5-6" aria-hidden="true" tabindex="-1"></a>  <span class="fu">rename</span>(<span class="at">sa2_code =</span> SA22020_V1,</span>
+<span id="cb5-7"><a href="#cb5-7" aria-hidden="true" tabindex="-1"></a>         <span class="at">sa2_name =</span> SA22020__1,</span>
+<span id="cb5-8"><a href="#cb5-8" aria-hidden="true" tabindex="-1"></a>         <span class="at">total_businesses =</span> Total_geog,</span>
+<span id="cb5-9"><a href="#cb5-9" aria-hidden="true" tabindex="-1"></a>         <span class="at">total_employees =</span> Total_empl,</span>
+<span id="cb5-10"><a href="#cb5-10" aria-hidden="true" tabindex="-1"></a>         <span class="at">land_area =</span> LAND_AREA_)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<p>Check for missing data.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb6"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a><span class="fu">is.na</span>(be_sf) <span class="sc">%&gt;%</span> <span class="fu">colSums</span>() <span class="co"># 81 polygons with missing business or employment data</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>        sa2_code         sa2_name total_businesses  total_employees 
+               0                0               81               81 
+       land_area         geometry 
+               0                0 </code></pre>
+</div>
+<div class="sourceCode cell-code" id="cb8"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Make a simple plot with the missing data polygons highlighted</span></span>
+<span id="cb8-2"><a href="#cb8-2" aria-hidden="true" tabindex="-1"></a><span class="fu">plot</span>(<span class="fu">st_geometry</span>(be_sf), <span class="at">col =</span> <span class="st">"lightblue"</span>)</span>
+<span id="cb8-3"><a href="#cb8-3" aria-hidden="true" tabindex="-1"></a><span class="fu">plot</span>(<span class="fu">st_geometry</span>(be_sf[<span class="fu">is.na</span>(be_sf<span class="sc">$</span>total_businesses) <span class="sc">|</span> <span class="fu">is.na</span>(be_sf<span class="sc">$</span>total_employees), ]), <span class="at">add =</span> <span class="cn">TRUE</span>, <span class="at">col =</span> <span class="st">"red"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="01_balanced_regionalisation_files/figure-html/missing_data_check-1.png" class="img-fluid figure-img" width="672"></p>
+</figure>
+</div>
+</div>
+</div>
+<p>The missing data are all the offshore areas (i.e.&nbsp;the coastline polygons and Lake Taupo). We will remove these polygons from the analysis. We will also remove the Chatham islands just to make visualisations a little more compact.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb9"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a>be_sf <span class="ot">&lt;-</span> be_sf <span class="sc">%&gt;%</span></span>
+<span id="cb9-2"><a href="#cb9-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">filter</span>(<span class="sc">!</span><span class="fu">is.na</span>(total_businesses) <span class="sc">&amp;</span> <span class="sc">!</span><span class="fu">is.na</span>(total_employees))</span>
+<span id="cb9-3"><a href="#cb9-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb9-4"><a href="#cb9-4" aria-hidden="true" tabindex="-1"></a><span class="co"># Remove Chatham Islands (SA2 code 700200)</span></span>
+<span id="cb9-5"><a href="#cb9-5" aria-hidden="true" tabindex="-1"></a>be_sf <span class="ot">&lt;-</span> be_sf <span class="sc">%&gt;%</span></span>
+<span id="cb9-6"><a href="#cb9-6" aria-hidden="true" tabindex="-1"></a>  <span class="fu">filter</span>(sa2_code <span class="sc">!=</span> <span class="st">"700200"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<p>Basic EDA stats to understand the data</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb10"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a>be_sf <span class="sc">%&gt;%</span></span>
+<span id="cb10-2"><a href="#cb10-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">st_drop_geometry</span>() <span class="sc">%&gt;%</span></span>
+<span id="cb10-3"><a href="#cb10-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">summarise</span>(<span class="fu">across</span>(<span class="fu">c</span>(total_businesses, total_employees, land_area),</span>
+<span id="cb10-4"><a href="#cb10-4" aria-hidden="true" tabindex="-1"></a>                  <span class="fu">list</span>(<span class="at">mean =</span> mean,</span>
+<span id="cb10-5"><a href="#cb10-5" aria-hidden="true" tabindex="-1"></a>                       <span class="at">median =</span> median,</span>
+<span id="cb10-6"><a href="#cb10-6" aria-hidden="true" tabindex="-1"></a>                       <span class="at">sd =</span> sd,</span>
+<span id="cb10-7"><a href="#cb10-7" aria-hidden="true" tabindex="-1"></a>                       <span class="at">cv =</span> <span class="sc">~</span><span class="fu">sd</span>(.x) <span class="sc">/</span> <span class="fu">mean</span>(.x),</span>
+<span id="cb10-8"><a href="#cb10-8" aria-hidden="true" tabindex="-1"></a>                       <span class="at">min =</span> min,</span>
+<span id="cb10-9"><a href="#cb10-9" aria-hidden="true" tabindex="-1"></a>                       <span class="at">max =</span> max),</span>
+<span id="cb10-10"><a href="#cb10-10" aria-hidden="true" tabindex="-1"></a>                  <span class="at">.names =</span> <span class="st">"{.col}_{.fn}"</span>)) <span class="sc">%&gt;%</span></span>
+<span id="cb10-11"><a href="#cb10-11" aria-hidden="true" tabindex="-1"></a>  <span class="fu">pivot_longer</span>(</span>
+<span id="cb10-12"><a href="#cb10-12" aria-hidden="true" tabindex="-1"></a>    <span class="at">cols =</span> <span class="fu">everything</span>(),</span>
+<span id="cb10-13"><a href="#cb10-13" aria-hidden="true" tabindex="-1"></a>    <span class="at">names_to =</span> <span class="fu">c</span>(<span class="st">"Variable"</span>, <span class="st">".value"</span>),</span>
+<span id="cb10-14"><a href="#cb10-14" aria-hidden="true" tabindex="-1"></a>    <span class="at">names_pattern =</span> <span class="st">"(.*)_(.*)"</span></span>
+<span id="cb10-15"><a href="#cb10-15" aria-hidden="true" tabindex="-1"></a>  ) <span class="sc">%&gt;%</span></span>
+<span id="cb10-16"><a href="#cb10-16" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="at">Variable =</span> <span class="fu">recode</span>(Variable,</span>
+<span id="cb10-17"><a href="#cb10-17" aria-hidden="true" tabindex="-1"></a>                           <span class="st">"total_businesses"</span> <span class="ot">=</span> <span class="st">"Businesses"</span>,</span>
+<span id="cb10-18"><a href="#cb10-18" aria-hidden="true" tabindex="-1"></a>                           <span class="st">"total_employees"</span> <span class="ot">=</span> <span class="st">"Employees"</span>,</span>
+<span id="cb10-19"><a href="#cb10-19" aria-hidden="true" tabindex="-1"></a>                           <span class="st">"land_area"</span> <span class="ot">=</span> <span class="st">"Land area"</span>)) <span class="sc">%&gt;%</span></span>
+<span id="cb10-20"><a href="#cb10-20" aria-hidden="true" tabindex="-1"></a>  <span class="fu">gt</span>() <span class="sc">%&gt;%</span></span>
+<span id="cb10-21"><a href="#cb10-21" aria-hidden="true" tabindex="-1"></a>  <span class="fu">fmt_number</span>(<span class="at">columns =</span> <span class="fu">where</span>(is.numeric), <span class="at">decimals =</span> <span class="dv">0</span>) <span class="sc">%&gt;%</span></span>
+<span id="cb10-22"><a href="#cb10-22" aria-hidden="true" tabindex="-1"></a>  <span class="fu">cols_label</span>(</span>
+<span id="cb10-23"><a href="#cb10-23" aria-hidden="true" tabindex="-1"></a>    <span class="at">Variable =</span> <span class="st">"Variable"</span>,</span>
+<span id="cb10-24"><a href="#cb10-24" aria-hidden="true" tabindex="-1"></a>    <span class="at">mean =</span> <span class="st">"Mean"</span>,</span>
+<span id="cb10-25"><a href="#cb10-25" aria-hidden="true" tabindex="-1"></a>    <span class="at">median =</span> <span class="st">"Median"</span>,</span>
+<span id="cb10-26"><a href="#cb10-26" aria-hidden="true" tabindex="-1"></a>    <span class="at">sd =</span> <span class="st">"Std. Dev."</span>,</span>
+<span id="cb10-27"><a href="#cb10-27" aria-hidden="true" tabindex="-1"></a>    <span class="at">cv =</span> <span class="st">"Coef. of Var."</span>,</span>
+<span id="cb10-28"><a href="#cb10-28" aria-hidden="true" tabindex="-1"></a>    <span class="at">min =</span> <span class="st">"Minimum"</span>,</span>
+<span id="cb10-29"><a href="#cb10-29" aria-hidden="true" tabindex="-1"></a>    <span class="at">max =</span> <span class="st">"Maximum"</span></span>
+<span id="cb10-30"><a href="#cb10-30" aria-hidden="true" tabindex="-1"></a>  ) <span class="sc">%&gt;%</span></span>
+<span id="cb10-31"><a href="#cb10-31" aria-hidden="true" tabindex="-1"></a>  <span class="fu">tab_header</span>(<span class="at">title =</span> <span class="st">"NZ business and employment data summary statistics"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output-display">
+<div id="uoeytcuoex" style="padding-left:0px;padding-right:0px;padding-top:10px;padding-bottom:10px;overflow-x:auto;overflow-y:auto;width:auto;height:auto;">
+<style>#uoeytcuoex table {
+  font-family: system-ui, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol', 'Noto Color Emoji';
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+#uoeytcuoex thead, #uoeytcuoex tbody, #uoeytcuoex tfoot, #uoeytcuoex tr, #uoeytcuoex td, #uoeytcuoex th {
+  border-style: none;
+}
+
+#uoeytcuoex p {
+  margin: 0;
+  padding: 0;
+}
+
+#uoeytcuoex .gt_table {
+  display: table;
+  border-collapse: collapse;
+  line-height: normal;
+  margin-left: auto;
+  margin-right: auto;
+  color: #333333;
+  font-size: 16px;
+  font-weight: normal;
+  font-style: normal;
+  background-color: #FFFFFF;
+  width: auto;
+  border-top-style: solid;
+  border-top-width: 2px;
+  border-top-color: #A8A8A8;
+  border-right-style: none;
+  border-right-width: 2px;
+  border-right-color: #D3D3D3;
+  border-bottom-style: solid;
+  border-bottom-width: 2px;
+  border-bottom-color: #A8A8A8;
+  border-left-style: none;
+  border-left-width: 2px;
+  border-left-color: #D3D3D3;
+}
+
+#uoeytcuoex .gt_caption {
+  padding-top: 4px;
+  padding-bottom: 4px;
+}
+
+#uoeytcuoex .gt_title {
+  color: #333333;
+  font-size: 125%;
+  font-weight: initial;
+  padding-top: 4px;
+  padding-bottom: 4px;
+  padding-left: 5px;
+  padding-right: 5px;
+  border-bottom-color: #FFFFFF;
+  border-bottom-width: 0;
+}
+
+#uoeytcuoex .gt_subtitle {
+  color: #333333;
+  font-size: 85%;
+  font-weight: initial;
+  padding-top: 3px;
+  padding-bottom: 5px;
+  padding-left: 5px;
+  padding-right: 5px;
+  border-top-color: #FFFFFF;
+  border-top-width: 0;
+}
+
+#uoeytcuoex .gt_heading {
+  background-color: #FFFFFF;
+  text-align: center;
+  border-bottom-color: #FFFFFF;
+  border-left-style: none;
+  border-left-width: 1px;
+  border-left-color: #D3D3D3;
+  border-right-style: none;
+  border-right-width: 1px;
+  border-right-color: #D3D3D3;
+}
+
+#uoeytcuoex .gt_bottom_border {
+  border-bottom-style: solid;
+  border-bottom-width: 2px;
+  border-bottom-color: #D3D3D3;
+}
+
+#uoeytcuoex .gt_col_headings {
+  border-top-style: solid;
+  border-top-width: 2px;
+  border-top-color: #D3D3D3;
+  border-bottom-style: solid;
+  border-bottom-width: 2px;
+  border-bottom-color: #D3D3D3;
+  border-left-style: none;
+  border-left-width: 1px;
+  border-left-color: #D3D3D3;
+  border-right-style: none;
+  border-right-width: 1px;
+  border-right-color: #D3D3D3;
+}
+
+#uoeytcuoex .gt_col_heading {
+  color: #333333;
+  background-color: #FFFFFF;
+  font-size: 100%;
+  font-weight: normal;
+  text-transform: inherit;
+  border-left-style: none;
+  border-left-width: 1px;
+  border-left-color: #D3D3D3;
+  border-right-style: none;
+  border-right-width: 1px;
+  border-right-color: #D3D3D3;
+  vertical-align: bottom;
+  padding-top: 5px;
+  padding-bottom: 6px;
+  padding-left: 5px;
+  padding-right: 5px;
+  overflow-x: hidden;
+}
+
+#uoeytcuoex .gt_column_spanner_outer {
+  color: #333333;
+  background-color: #FFFFFF;
+  font-size: 100%;
+  font-weight: normal;
+  text-transform: inherit;
+  padding-top: 0;
+  padding-bottom: 0;
+  padding-left: 4px;
+  padding-right: 4px;
+}
+
+#uoeytcuoex .gt_column_spanner_outer:first-child {
+  padding-left: 0;
+}
+
+#uoeytcuoex .gt_column_spanner_outer:last-child {
+  padding-right: 0;
+}
+
+#uoeytcuoex .gt_column_spanner {
+  border-bottom-style: solid;
+  border-bottom-width: 2px;
+  border-bottom-color: #D3D3D3;
+  vertical-align: bottom;
+  padding-top: 5px;
+  padding-bottom: 5px;
+  overflow-x: hidden;
+  display: inline-block;
+  width: 100%;
+}
+
+#uoeytcuoex .gt_spanner_row {
+  border-bottom-style: hidden;
+}
+
+#uoeytcuoex .gt_group_heading {
+  padding-top: 8px;
+  padding-bottom: 8px;
+  padding-left: 5px;
+  padding-right: 5px;
+  color: #333333;
+  background-color: #FFFFFF;
+  font-size: 100%;
+  font-weight: initial;
+  text-transform: inherit;
+  border-top-style: solid;
+  border-top-width: 2px;
+  border-top-color: #D3D3D3;
+  border-bottom-style: solid;
+  border-bottom-width: 2px;
+  border-bottom-color: #D3D3D3;
+  border-left-style: none;
+  border-left-width: 1px;
+  border-left-color: #D3D3D3;
+  border-right-style: none;
+  border-right-width: 1px;
+  border-right-color: #D3D3D3;
+  vertical-align: middle;
+  text-align: left;
+}
+
+#uoeytcuoex .gt_empty_group_heading {
+  padding: 0.5px;
+  color: #333333;
+  background-color: #FFFFFF;
+  font-size: 100%;
+  font-weight: initial;
+  border-top-style: solid;
+  border-top-width: 2px;
+  border-top-color: #D3D3D3;
+  border-bottom-style: solid;
+  border-bottom-width: 2px;
+  border-bottom-color: #D3D3D3;
+  vertical-align: middle;
+}
+
+#uoeytcuoex .gt_from_md > :first-child {
+  margin-top: 0;
+}
+
+#uoeytcuoex .gt_from_md > :last-child {
+  margin-bottom: 0;
+}
+
+#uoeytcuoex .gt_row {
+  padding-top: 8px;
+  padding-bottom: 8px;
+  padding-left: 5px;
+  padding-right: 5px;
+  margin: 10px;
+  border-top-style: solid;
+  border-top-width: 1px;
+  border-top-color: #D3D3D3;
+  border-left-style: none;
+  border-left-width: 1px;
+  border-left-color: #D3D3D3;
+  border-right-style: none;
+  border-right-width: 1px;
+  border-right-color: #D3D3D3;
+  vertical-align: middle;
+  overflow-x: hidden;
+}
+
+#uoeytcuoex .gt_stub {
+  color: #333333;
+  background-color: #FFFFFF;
+  font-size: 100%;
+  font-weight: initial;
+  text-transform: inherit;
+  border-right-style: solid;
+  border-right-width: 2px;
+  border-right-color: #D3D3D3;
+  padding-left: 5px;
+  padding-right: 5px;
+}
+
+#uoeytcuoex .gt_stub_row_group {
+  color: #333333;
+  background-color: #FFFFFF;
+  font-size: 100%;
+  font-weight: initial;
+  text-transform: inherit;
+  border-right-style: solid;
+  border-right-width: 2px;
+  border-right-color: #D3D3D3;
+  padding-left: 5px;
+  padding-right: 5px;
+  vertical-align: top;
+}
+
+#uoeytcuoex .gt_row_group_first td {
+  border-top-width: 2px;
+}
+
+#uoeytcuoex .gt_row_group_first th {
+  border-top-width: 2px;
+}
+
+#uoeytcuoex .gt_summary_row {
+  color: #333333;
+  background-color: #FFFFFF;
+  text-transform: inherit;
+  padding-top: 8px;
+  padding-bottom: 8px;
+  padding-left: 5px;
+  padding-right: 5px;
+}
+
+#uoeytcuoex .gt_first_summary_row {
+  border-top-style: solid;
+  border-top-color: #D3D3D3;
+}
+
+#uoeytcuoex .gt_first_summary_row.thick {
+  border-top-width: 2px;
+}
+
+#uoeytcuoex .gt_last_summary_row {
+  padding-top: 8px;
+  padding-bottom: 8px;
+  padding-left: 5px;
+  padding-right: 5px;
+  border-bottom-style: solid;
+  border-bottom-width: 2px;
+  border-bottom-color: #D3D3D3;
+}
+
+#uoeytcuoex .gt_grand_summary_row {
+  color: #333333;
+  background-color: #FFFFFF;
+  text-transform: inherit;
+  padding-top: 8px;
+  padding-bottom: 8px;
+  padding-left: 5px;
+  padding-right: 5px;
+}
+
+#uoeytcuoex .gt_first_grand_summary_row {
+  padding-top: 8px;
+  padding-bottom: 8px;
+  padding-left: 5px;
+  padding-right: 5px;
+  border-top-style: double;
+  border-top-width: 6px;
+  border-top-color: #D3D3D3;
+}
+
+#uoeytcuoex .gt_last_grand_summary_row_top {
+  padding-top: 8px;
+  padding-bottom: 8px;
+  padding-left: 5px;
+  padding-right: 5px;
+  border-bottom-style: double;
+  border-bottom-width: 6px;
+  border-bottom-color: #D3D3D3;
+}
+
+#uoeytcuoex .gt_striped {
+  background-color: rgba(128, 128, 128, 0.05);
+}
+
+#uoeytcuoex .gt_table_body {
+  border-top-style: solid;
+  border-top-width: 2px;
+  border-top-color: #D3D3D3;
+  border-bottom-style: solid;
+  border-bottom-width: 2px;
+  border-bottom-color: #D3D3D3;
+}
+
+#uoeytcuoex .gt_footnotes {
+  color: #333333;
+  background-color: #FFFFFF;
+  border-bottom-style: none;
+  border-bottom-width: 2px;
+  border-bottom-color: #D3D3D3;
+  border-left-style: none;
+  border-left-width: 2px;
+  border-left-color: #D3D3D3;
+  border-right-style: none;
+  border-right-width: 2px;
+  border-right-color: #D3D3D3;
+}
+
+#uoeytcuoex .gt_footnote {
+  margin: 0px;
+  font-size: 90%;
+  padding-top: 4px;
+  padding-bottom: 4px;
+  padding-left: 5px;
+  padding-right: 5px;
+}
+
+#uoeytcuoex .gt_sourcenotes {
+  color: #333333;
+  background-color: #FFFFFF;
+  border-bottom-style: none;
+  border-bottom-width: 2px;
+  border-bottom-color: #D3D3D3;
+  border-left-style: none;
+  border-left-width: 2px;
+  border-left-color: #D3D3D3;
+  border-right-style: none;
+  border-right-width: 2px;
+  border-right-color: #D3D3D3;
+}
+
+#uoeytcuoex .gt_sourcenote {
+  font-size: 90%;
+  padding-top: 4px;
+  padding-bottom: 4px;
+  padding-left: 5px;
+  padding-right: 5px;
+}
+
+#uoeytcuoex .gt_left {
+  text-align: left;
+}
+
+#uoeytcuoex .gt_center {
+  text-align: center;
+}
+
+#uoeytcuoex .gt_right {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
+#uoeytcuoex .gt_font_normal {
+  font-weight: normal;
+}
+
+#uoeytcuoex .gt_font_bold {
+  font-weight: bold;
+}
+
+#uoeytcuoex .gt_font_italic {
+  font-style: italic;
+}
+
+#uoeytcuoex .gt_super {
+  font-size: 65%;
+}
+
+#uoeytcuoex .gt_footnote_marks {
+  font-size: 75%;
+  vertical-align: 0.4em;
+  position: initial;
+}
+
+#uoeytcuoex .gt_asterisk {
+  font-size: 100%;
+  vertical-align: 0;
+}
+
+#uoeytcuoex .gt_indent_1 {
+  text-indent: 5px;
+}
+
+#uoeytcuoex .gt_indent_2 {
+  text-indent: 10px;
+}
+
+#uoeytcuoex .gt_indent_3 {
+  text-indent: 15px;
+}
+
+#uoeytcuoex .gt_indent_4 {
+  text-indent: 20px;
+}
+
+#uoeytcuoex .gt_indent_5 {
+  text-indent: 25px;
+}
+
+#uoeytcuoex .katex-display {
+  display: inline-flex !important;
+  margin-bottom: 0.75em !important;
+}
+
+#uoeytcuoex div.Reactable > div.rt-table > div.rt-thead > div.rt-tr.rt-tr-group-header > div.rt-th-group:after {
+  height: 0px !important;
+}
+</style>
+
+<table class="gt_table caption-top table table-sm table-striped small" data-quarto-postprocess="true" data-quarto-disable-processing="false" data-quarto-bootstrap="false">
+<thead>
+<tr class="gt_heading header">
+<th colspan="7" class="gt_heading gt_title gt_font_normal gt_bottom_border">NZ business and employment data summary statistics</th>
+</tr>
+<tr class="gt_col_headings even">
+<th id="Variable" class="gt_col_heading gt_columns_bottom_border gt_left" data-quarto-table-cell-role="th" scope="col">Variable</th>
+<th id="mean" class="gt_col_heading gt_columns_bottom_border gt_right" data-quarto-table-cell-role="th" scope="col">Mean</th>
+<th id="median" class="gt_col_heading gt_columns_bottom_border gt_right" data-quarto-table-cell-role="th" scope="col">Median</th>
+<th id="sd" class="gt_col_heading gt_columns_bottom_border gt_right" data-quarto-table-cell-role="th" scope="col">Std. Dev.</th>
+<th id="cv" class="gt_col_heading gt_columns_bottom_border gt_right" data-quarto-table-cell-role="th" scope="col">Coef. of Var.</th>
+<th id="min" class="gt_col_heading gt_columns_bottom_border gt_right" data-quarto-table-cell-role="th" scope="col">Minimum</th>
+<th id="max" class="gt_col_heading gt_columns_bottom_border gt_right" data-quarto-table-cell-role="th" scope="col">Maximum</th>
+</tr>
+</thead>
+<tbody class="gt_table_body">
+<tr class="odd">
+<td class="gt_row gt_left" headers="Variable">Businesses</td>
+<td class="gt_row gt_right" headers="mean">275</td>
+<td class="gt_row gt_right" headers="median">213</td>
+<td class="gt_row gt_right" headers="sd">290</td>
+<td class="gt_row gt_right" headers="cv">1</td>
+<td class="gt_row gt_right" headers="min">0</td>
+<td class="gt_row gt_right" headers="max">4,191</td>
+</tr>
+<tr class="even">
+<td class="gt_row gt_left" headers="Variable">Employees</td>
+<td class="gt_row gt_right" headers="mean">1,073</td>
+<td class="gt_row gt_right" headers="median">400</td>
+<td class="gt_row gt_right" headers="sd">2,696</td>
+<td class="gt_row gt_right" headers="cv">3</td>
+<td class="gt_row gt_right" headers="min">0</td>
+<td class="gt_row gt_right" headers="max">58,100</td>
+</tr>
+<tr class="odd">
+<td class="gt_row gt_left" headers="Variable">Land area</td>
+<td class="gt_row gt_right" headers="mean">122</td>
+<td class="gt_row gt_right" headers="median">2</td>
+<td class="gt_row gt_right" headers="sd">487</td>
+<td class="gt_row gt_right" headers="cv">4</td>
+<td class="gt_row gt_right" headers="min">0</td>
+<td class="gt_row gt_right" headers="max">12,042</td>
+</tr>
+</tbody>
+</table>
+
+</div>
+</div>
+<div class="sourceCode cell-code" id="cb11"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb11-1"><a href="#cb11-1" aria-hidden="true" tabindex="-1"></a><span class="fu">tm_shape</span>(be_sf) <span class="sc">+</span></span>
+<span id="cb11-2"><a href="#cb11-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">tm_polygons</span>(<span class="st">"total_employees"</span>,</span>
+<span id="cb11-3"><a href="#cb11-3" aria-hidden="true" tabindex="-1"></a>              <span class="at">style =</span> <span class="st">"quantile"</span>,</span>
+<span id="cb11-4"><a href="#cb11-4" aria-hidden="true" tabindex="-1"></a>              <span class="at">palette =</span> viridis<span class="sc">::</span><span class="fu">rocket</span>(<span class="dv">200</span>,</span>
+<span id="cb11-5"><a href="#cb11-5" aria-hidden="true" tabindex="-1"></a>                                        <span class="at">direction =</span> <span class="sc">-</span><span class="dv">1</span>,</span>
+<span id="cb11-6"><a href="#cb11-6" aria-hidden="true" tabindex="-1"></a>                                        <span class="at">begin =</span> <span class="fl">0.2</span>, <span class="at">end =</span> <span class="dv">1</span>),</span>
+<span id="cb11-7"><a href="#cb11-7" aria-hidden="true" tabindex="-1"></a>              <span class="at">title =</span> <span class="st">"Employees per SA2"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="01_balanced_regionalisation_files/figure-html/eda_stats-1.png" class="img-fluid figure-img" width="672"></p>
+</figure>
+</div>
+</div>
+</div>
+<p>Inital statistics of how well balanced each SA2 area is in terms of business and employment, may be used later to assess how well balanced the final regions are.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb12"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb12-1"><a href="#cb12-1" aria-hidden="true" tabindex="-1"></a>sa2_base_stats <span class="ot">&lt;-</span> <span class="fu">data.frame</span>(</span>
+<span id="cb12-2"><a href="#cb12-2" aria-hidden="true" tabindex="-1"></a>  <span class="at">Metric =</span> <span class="fu">c</span>(<span class="st">"Number of polygons"</span>,</span>
+<span id="cb12-3"><a href="#cb12-3" aria-hidden="true" tabindex="-1"></a>             <span class="st">"Mean employees per polygon"</span>,</span>
+<span id="cb12-4"><a href="#cb12-4" aria-hidden="true" tabindex="-1"></a>             <span class="st">"Median employees per polygon"</span>,</span>
+<span id="cb12-5"><a href="#cb12-5" aria-hidden="true" tabindex="-1"></a>             <span class="st">"CV employees"</span>,</span>
+<span id="cb12-6"><a href="#cb12-6" aria-hidden="true" tabindex="-1"></a>             <span class="st">"Mean businesses per polygon"</span>,</span>
+<span id="cb12-7"><a href="#cb12-7" aria-hidden="true" tabindex="-1"></a>             <span class="st">"Median businesses per polygon"</span>,</span>
+<span id="cb12-8"><a href="#cb12-8" aria-hidden="true" tabindex="-1"></a>             <span class="st">"CV businesses"</span>),</span>
+<span id="cb12-9"><a href="#cb12-9" aria-hidden="true" tabindex="-1"></a>  <span class="at">Value =</span> <span class="fu">c</span>(<span class="fu">nrow</span>(be_sf),</span>
+<span id="cb12-10"><a href="#cb12-10" aria-hidden="true" tabindex="-1"></a>            <span class="fu">round</span>(<span class="fu">mean</span>(be_sf<span class="sc">$</span>total_employees), <span class="dv">0</span>),</span>
+<span id="cb12-11"><a href="#cb12-11" aria-hidden="true" tabindex="-1"></a>            <span class="fu">round</span>(<span class="fu">median</span>(be_sf<span class="sc">$</span>total_employees), <span class="dv">0</span>),</span>
+<span id="cb12-12"><a href="#cb12-12" aria-hidden="true" tabindex="-1"></a>            <span class="fu">round</span>(<span class="fu">sd</span>(be_sf<span class="sc">$</span>total_employees) <span class="sc">/</span> <span class="fu">mean</span>(be_sf<span class="sc">$</span>total_employees), <span class="dv">3</span>),</span>
+<span id="cb12-13"><a href="#cb12-13" aria-hidden="true" tabindex="-1"></a>            <span class="fu">round</span>(<span class="fu">mean</span>(be_sf<span class="sc">$</span>total_businesses), <span class="dv">0</span>),</span>
+<span id="cb12-14"><a href="#cb12-14" aria-hidden="true" tabindex="-1"></a>            <span class="fu">round</span>(<span class="fu">median</span>(be_sf<span class="sc">$</span>total_businesses), <span class="dv">0</span>),</span>
+<span id="cb12-15"><a href="#cb12-15" aria-hidden="true" tabindex="-1"></a>            <span class="fu">round</span>(<span class="fu">sd</span>(be_sf<span class="sc">$</span>total_businesses) <span class="sc">/</span> <span class="fu">mean</span>(be_sf<span class="sc">$</span>total_businesses), <span class="dv">3</span>))</span>
+<span id="cb12-16"><a href="#cb12-16" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb12-17"><a href="#cb12-17" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb12-18"><a href="#cb12-18" aria-hidden="true" tabindex="-1"></a>sa2_base_stats <span class="sc">%&gt;%</span></span>
+<span id="cb12-19"><a href="#cb12-19" aria-hidden="true" tabindex="-1"></a>  <span class="fu">gt</span>() <span class="sc">%&gt;%</span></span>
+<span id="cb12-20"><a href="#cb12-20" aria-hidden="true" tabindex="-1"></a>  <span class="fu">cols_label</span>(</span>
+<span id="cb12-21"><a href="#cb12-21" aria-hidden="true" tabindex="-1"></a>    <span class="at">Metric =</span> <span class="st">"Metric"</span>,</span>
+<span id="cb12-22"><a href="#cb12-22" aria-hidden="true" tabindex="-1"></a>    <span class="at">Value =</span> <span class="st">"Value"</span></span>
+<span id="cb12-23"><a href="#cb12-23" aria-hidden="true" tabindex="-1"></a>  ) <span class="sc">%&gt;%</span></span>
+<span id="cb12-24"><a href="#cb12-24" aria-hidden="true" tabindex="-1"></a>  <span class="fu">tab_header</span>(<span class="at">title =</span> <span class="st">"Initial SA2 balance"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output-display">
+<div id="oogpaeorej" style="padding-left:0px;padding-right:0px;padding-top:10px;padding-bottom:10px;overflow-x:auto;overflow-y:auto;width:auto;height:auto;">
+<style>#oogpaeorej table {
+  font-family: system-ui, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol', 'Noto Color Emoji';
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+#oogpaeorej thead, #oogpaeorej tbody, #oogpaeorej tfoot, #oogpaeorej tr, #oogpaeorej td, #oogpaeorej th {
+  border-style: none;
+}
+
+#oogpaeorej p {
+  margin: 0;
+  padding: 0;
+}
+
+#oogpaeorej .gt_table {
+  display: table;
+  border-collapse: collapse;
+  line-height: normal;
+  margin-left: auto;
+  margin-right: auto;
+  color: #333333;
+  font-size: 16px;
+  font-weight: normal;
+  font-style: normal;
+  background-color: #FFFFFF;
+  width: auto;
+  border-top-style: solid;
+  border-top-width: 2px;
+  border-top-color: #A8A8A8;
+  border-right-style: none;
+  border-right-width: 2px;
+  border-right-color: #D3D3D3;
+  border-bottom-style: solid;
+  border-bottom-width: 2px;
+  border-bottom-color: #A8A8A8;
+  border-left-style: none;
+  border-left-width: 2px;
+  border-left-color: #D3D3D3;
+}
+
+#oogpaeorej .gt_caption {
+  padding-top: 4px;
+  padding-bottom: 4px;
+}
+
+#oogpaeorej .gt_title {
+  color: #333333;
+  font-size: 125%;
+  font-weight: initial;
+  padding-top: 4px;
+  padding-bottom: 4px;
+  padding-left: 5px;
+  padding-right: 5px;
+  border-bottom-color: #FFFFFF;
+  border-bottom-width: 0;
+}
+
+#oogpaeorej .gt_subtitle {
+  color: #333333;
+  font-size: 85%;
+  font-weight: initial;
+  padding-top: 3px;
+  padding-bottom: 5px;
+  padding-left: 5px;
+  padding-right: 5px;
+  border-top-color: #FFFFFF;
+  border-top-width: 0;
+}
+
+#oogpaeorej .gt_heading {
+  background-color: #FFFFFF;
+  text-align: center;
+  border-bottom-color: #FFFFFF;
+  border-left-style: none;
+  border-left-width: 1px;
+  border-left-color: #D3D3D3;
+  border-right-style: none;
+  border-right-width: 1px;
+  border-right-color: #D3D3D3;
+}
+
+#oogpaeorej .gt_bottom_border {
+  border-bottom-style: solid;
+  border-bottom-width: 2px;
+  border-bottom-color: #D3D3D3;
+}
+
+#oogpaeorej .gt_col_headings {
+  border-top-style: solid;
+  border-top-width: 2px;
+  border-top-color: #D3D3D3;
+  border-bottom-style: solid;
+  border-bottom-width: 2px;
+  border-bottom-color: #D3D3D3;
+  border-left-style: none;
+  border-left-width: 1px;
+  border-left-color: #D3D3D3;
+  border-right-style: none;
+  border-right-width: 1px;
+  border-right-color: #D3D3D3;
+}
+
+#oogpaeorej .gt_col_heading {
+  color: #333333;
+  background-color: #FFFFFF;
+  font-size: 100%;
+  font-weight: normal;
+  text-transform: inherit;
+  border-left-style: none;
+  border-left-width: 1px;
+  border-left-color: #D3D3D3;
+  border-right-style: none;
+  border-right-width: 1px;
+  border-right-color: #D3D3D3;
+  vertical-align: bottom;
+  padding-top: 5px;
+  padding-bottom: 6px;
+  padding-left: 5px;
+  padding-right: 5px;
+  overflow-x: hidden;
+}
+
+#oogpaeorej .gt_column_spanner_outer {
+  color: #333333;
+  background-color: #FFFFFF;
+  font-size: 100%;
+  font-weight: normal;
+  text-transform: inherit;
+  padding-top: 0;
+  padding-bottom: 0;
+  padding-left: 4px;
+  padding-right: 4px;
+}
+
+#oogpaeorej .gt_column_spanner_outer:first-child {
+  padding-left: 0;
+}
+
+#oogpaeorej .gt_column_spanner_outer:last-child {
+  padding-right: 0;
+}
+
+#oogpaeorej .gt_column_spanner {
+  border-bottom-style: solid;
+  border-bottom-width: 2px;
+  border-bottom-color: #D3D3D3;
+  vertical-align: bottom;
+  padding-top: 5px;
+  padding-bottom: 5px;
+  overflow-x: hidden;
+  display: inline-block;
+  width: 100%;
+}
+
+#oogpaeorej .gt_spanner_row {
+  border-bottom-style: hidden;
+}
+
+#oogpaeorej .gt_group_heading {
+  padding-top: 8px;
+  padding-bottom: 8px;
+  padding-left: 5px;
+  padding-right: 5px;
+  color: #333333;
+  background-color: #FFFFFF;
+  font-size: 100%;
+  font-weight: initial;
+  text-transform: inherit;
+  border-top-style: solid;
+  border-top-width: 2px;
+  border-top-color: #D3D3D3;
+  border-bottom-style: solid;
+  border-bottom-width: 2px;
+  border-bottom-color: #D3D3D3;
+  border-left-style: none;
+  border-left-width: 1px;
+  border-left-color: #D3D3D3;
+  border-right-style: none;
+  border-right-width: 1px;
+  border-right-color: #D3D3D3;
+  vertical-align: middle;
+  text-align: left;
+}
+
+#oogpaeorej .gt_empty_group_heading {
+  padding: 0.5px;
+  color: #333333;
+  background-color: #FFFFFF;
+  font-size: 100%;
+  font-weight: initial;
+  border-top-style: solid;
+  border-top-width: 2px;
+  border-top-color: #D3D3D3;
+  border-bottom-style: solid;
+  border-bottom-width: 2px;
+  border-bottom-color: #D3D3D3;
+  vertical-align: middle;
+}
+
+#oogpaeorej .gt_from_md > :first-child {
+  margin-top: 0;
+}
+
+#oogpaeorej .gt_from_md > :last-child {
+  margin-bottom: 0;
+}
+
+#oogpaeorej .gt_row {
+  padding-top: 8px;
+  padding-bottom: 8px;
+  padding-left: 5px;
+  padding-right: 5px;
+  margin: 10px;
+  border-top-style: solid;
+  border-top-width: 1px;
+  border-top-color: #D3D3D3;
+  border-left-style: none;
+  border-left-width: 1px;
+  border-left-color: #D3D3D3;
+  border-right-style: none;
+  border-right-width: 1px;
+  border-right-color: #D3D3D3;
+  vertical-align: middle;
+  overflow-x: hidden;
+}
+
+#oogpaeorej .gt_stub {
+  color: #333333;
+  background-color: #FFFFFF;
+  font-size: 100%;
+  font-weight: initial;
+  text-transform: inherit;
+  border-right-style: solid;
+  border-right-width: 2px;
+  border-right-color: #D3D3D3;
+  padding-left: 5px;
+  padding-right: 5px;
+}
+
+#oogpaeorej .gt_stub_row_group {
+  color: #333333;
+  background-color: #FFFFFF;
+  font-size: 100%;
+  font-weight: initial;
+  text-transform: inherit;
+  border-right-style: solid;
+  border-right-width: 2px;
+  border-right-color: #D3D3D3;
+  padding-left: 5px;
+  padding-right: 5px;
+  vertical-align: top;
+}
+
+#oogpaeorej .gt_row_group_first td {
+  border-top-width: 2px;
+}
+
+#oogpaeorej .gt_row_group_first th {
+  border-top-width: 2px;
+}
+
+#oogpaeorej .gt_summary_row {
+  color: #333333;
+  background-color: #FFFFFF;
+  text-transform: inherit;
+  padding-top: 8px;
+  padding-bottom: 8px;
+  padding-left: 5px;
+  padding-right: 5px;
+}
+
+#oogpaeorej .gt_first_summary_row {
+  border-top-style: solid;
+  border-top-color: #D3D3D3;
+}
+
+#oogpaeorej .gt_first_summary_row.thick {
+  border-top-width: 2px;
+}
+
+#oogpaeorej .gt_last_summary_row {
+  padding-top: 8px;
+  padding-bottom: 8px;
+  padding-left: 5px;
+  padding-right: 5px;
+  border-bottom-style: solid;
+  border-bottom-width: 2px;
+  border-bottom-color: #D3D3D3;
+}
+
+#oogpaeorej .gt_grand_summary_row {
+  color: #333333;
+  background-color: #FFFFFF;
+  text-transform: inherit;
+  padding-top: 8px;
+  padding-bottom: 8px;
+  padding-left: 5px;
+  padding-right: 5px;
+}
+
+#oogpaeorej .gt_first_grand_summary_row {
+  padding-top: 8px;
+  padding-bottom: 8px;
+  padding-left: 5px;
+  padding-right: 5px;
+  border-top-style: double;
+  border-top-width: 6px;
+  border-top-color: #D3D3D3;
+}
+
+#oogpaeorej .gt_last_grand_summary_row_top {
+  padding-top: 8px;
+  padding-bottom: 8px;
+  padding-left: 5px;
+  padding-right: 5px;
+  border-bottom-style: double;
+  border-bottom-width: 6px;
+  border-bottom-color: #D3D3D3;
+}
+
+#oogpaeorej .gt_striped {
+  background-color: rgba(128, 128, 128, 0.05);
+}
+
+#oogpaeorej .gt_table_body {
+  border-top-style: solid;
+  border-top-width: 2px;
+  border-top-color: #D3D3D3;
+  border-bottom-style: solid;
+  border-bottom-width: 2px;
+  border-bottom-color: #D3D3D3;
+}
+
+#oogpaeorej .gt_footnotes {
+  color: #333333;
+  background-color: #FFFFFF;
+  border-bottom-style: none;
+  border-bottom-width: 2px;
+  border-bottom-color: #D3D3D3;
+  border-left-style: none;
+  border-left-width: 2px;
+  border-left-color: #D3D3D3;
+  border-right-style: none;
+  border-right-width: 2px;
+  border-right-color: #D3D3D3;
+}
+
+#oogpaeorej .gt_footnote {
+  margin: 0px;
+  font-size: 90%;
+  padding-top: 4px;
+  padding-bottom: 4px;
+  padding-left: 5px;
+  padding-right: 5px;
+}
+
+#oogpaeorej .gt_sourcenotes {
+  color: #333333;
+  background-color: #FFFFFF;
+  border-bottom-style: none;
+  border-bottom-width: 2px;
+  border-bottom-color: #D3D3D3;
+  border-left-style: none;
+  border-left-width: 2px;
+  border-left-color: #D3D3D3;
+  border-right-style: none;
+  border-right-width: 2px;
+  border-right-color: #D3D3D3;
+}
+
+#oogpaeorej .gt_sourcenote {
+  font-size: 90%;
+  padding-top: 4px;
+  padding-bottom: 4px;
+  padding-left: 5px;
+  padding-right: 5px;
+}
+
+#oogpaeorej .gt_left {
+  text-align: left;
+}
+
+#oogpaeorej .gt_center {
+  text-align: center;
+}
+
+#oogpaeorej .gt_right {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
+#oogpaeorej .gt_font_normal {
+  font-weight: normal;
+}
+
+#oogpaeorej .gt_font_bold {
+  font-weight: bold;
+}
+
+#oogpaeorej .gt_font_italic {
+  font-style: italic;
+}
+
+#oogpaeorej .gt_super {
+  font-size: 65%;
+}
+
+#oogpaeorej .gt_footnote_marks {
+  font-size: 75%;
+  vertical-align: 0.4em;
+  position: initial;
+}
+
+#oogpaeorej .gt_asterisk {
+  font-size: 100%;
+  vertical-align: 0;
+}
+
+#oogpaeorej .gt_indent_1 {
+  text-indent: 5px;
+}
+
+#oogpaeorej .gt_indent_2 {
+  text-indent: 10px;
+}
+
+#oogpaeorej .gt_indent_3 {
+  text-indent: 15px;
+}
+
+#oogpaeorej .gt_indent_4 {
+  text-indent: 20px;
+}
+
+#oogpaeorej .gt_indent_5 {
+  text-indent: 25px;
+}
+
+#oogpaeorej .katex-display {
+  display: inline-flex !important;
+  margin-bottom: 0.75em !important;
+}
+
+#oogpaeorej div.Reactable > div.rt-table > div.rt-thead > div.rt-tr.rt-tr-group-header > div.rt-th-group:after {
+  height: 0px !important;
+}
+</style>
+
+<table class="gt_table caption-top table table-sm table-striped small" data-quarto-postprocess="true" data-quarto-disable-processing="false" data-quarto-bootstrap="false">
+<thead>
+<tr class="gt_heading header">
+<th colspan="2" class="gt_heading gt_title gt_font_normal gt_bottom_border">Initial SA2 balance</th>
+</tr>
+<tr class="gt_col_headings even">
+<th id="Metric" class="gt_col_heading gt_columns_bottom_border gt_left" data-quarto-table-cell-role="th" scope="col">Metric</th>
+<th id="Value" class="gt_col_heading gt_columns_bottom_border gt_right" data-quarto-table-cell-role="th" scope="col">Value</th>
+</tr>
+</thead>
+<tbody class="gt_table_body">
+<tr class="odd">
+<td class="gt_row gt_left" headers="Metric">Number of polygons</td>
+<td class="gt_row gt_right" headers="Value">2158.000</td>
+</tr>
+<tr class="even">
+<td class="gt_row gt_left" headers="Metric">Mean employees per polygon</td>
+<td class="gt_row gt_right" headers="Value">1073.000</td>
+</tr>
+<tr class="odd">
+<td class="gt_row gt_left" headers="Metric">Median employees per polygon</td>
+<td class="gt_row gt_right" headers="Value">400.000</td>
+</tr>
+<tr class="even">
+<td class="gt_row gt_left" headers="Metric">CV employees</td>
+<td class="gt_row gt_right" headers="Value">2.512</td>
+</tr>
+<tr class="odd">
+<td class="gt_row gt_left" headers="Metric">Mean businesses per polygon</td>
+<td class="gt_row gt_right" headers="Value">275.000</td>
+</tr>
+<tr class="even">
+<td class="gt_row gt_left" headers="Metric">Median businesses per polygon</td>
+<td class="gt_row gt_right" headers="Value">213.000</td>
+</tr>
+<tr class="odd">
+<td class="gt_row gt_left" headers="Metric">CV businesses</td>
+<td class="gt_row gt_right" headers="Value">1.057</td>
+</tr>
+</tbody>
+</table>
+
+</div>
+</div>
+</div>
+
+</main>
+<!-- /main column -->
+<script id="quarto-html-after-body" type="application/javascript">
+window.document.addEventListener("DOMContentLoaded", function (event) {
+  const toggleBodyColorMode = (bsSheetEl) => {
+    const mode = bsSheetEl.getAttribute("data-mode");
+    const bodyEl = window.document.querySelector("body");
+    if (mode === "dark") {
+      bodyEl.classList.add("quarto-dark");
+      bodyEl.classList.remove("quarto-light");
+    } else {
+      bodyEl.classList.add("quarto-light");
+      bodyEl.classList.remove("quarto-dark");
+    }
+  }
+  const toggleBodyColorPrimary = () => {
+    const bsSheetEl = window.document.querySelector("link#quarto-bootstrap");
+    if (bsSheetEl) {
+      toggleBodyColorMode(bsSheetEl);
+    }
+  }
+  toggleBodyColorPrimary();  
+  const icon = "";
+  const anchorJS = new window.AnchorJS();
+  anchorJS.options = {
+    placement: 'right',
+    icon: icon
+  };
+  anchorJS.add('.anchored');
+  const isCodeAnnotation = (el) => {
+    for (const clz of el.classList) {
+      if (clz.startsWith('code-annotation-')) {                     
+        return true;
+      }
+    }
+    return false;
+  }
+  const onCopySuccess = function(e) {
+    // button target
+    const button = e.trigger;
+    // don't keep focus
+    button.blur();
+    // flash "checked"
+    button.classList.add('code-copy-button-checked');
+    var currentTitle = button.getAttribute("title");
+    button.setAttribute("title", "Copied!");
+    let tooltip;
+    if (window.bootstrap) {
+      button.setAttribute("data-bs-toggle", "tooltip");
+      button.setAttribute("data-bs-placement", "left");
+      button.setAttribute("data-bs-title", "Copied!");
+      tooltip = new bootstrap.Tooltip(button, 
+        { trigger: "manual", 
+          customClass: "code-copy-button-tooltip",
+          offset: [0, -8]});
+      tooltip.show();    
+    }
+    setTimeout(function() {
+      if (tooltip) {
+        tooltip.hide();
+        button.removeAttribute("data-bs-title");
+        button.removeAttribute("data-bs-toggle");
+        button.removeAttribute("data-bs-placement");
+      }
+      button.setAttribute("title", currentTitle);
+      button.classList.remove('code-copy-button-checked');
+    }, 1000);
+    // clear code selection
+    e.clearSelection();
+  }
+  const getTextToCopy = function(trigger) {
+      const codeEl = trigger.previousElementSibling.cloneNode(true);
+      for (const childEl of codeEl.children) {
+        if (isCodeAnnotation(childEl)) {
+          childEl.remove();
+        }
+      }
+      return codeEl.innerText;
+  }
+  const clipboard = new window.ClipboardJS('.code-copy-button:not([data-in-quarto-modal])', {
+    text: getTextToCopy
+  });
+  clipboard.on('success', onCopySuccess);
+  if (window.document.getElementById('quarto-embedded-source-code-modal')) {
+    const clipboardModal = new window.ClipboardJS('.code-copy-button[data-in-quarto-modal]', {
+      text: getTextToCopy,
+      container: window.document.getElementById('quarto-embedded-source-code-modal')
+    });
+    clipboardModal.on('success', onCopySuccess);
+  }
+    var localhostRegex = new RegExp(/^(?:http|https):\/\/localhost\:?[0-9]*\//);
+    var mailtoRegex = new RegExp(/^mailto:/);
+      var filterRegex = new RegExp('/' + window.location.host + '/');
+    var isInternal = (href) => {
+        return filterRegex.test(href) || localhostRegex.test(href) || mailtoRegex.test(href);
+    }
+    // Inspect non-navigation links and adorn them if external
+ 	var links = window.document.querySelectorAll('a[href]:not(.nav-link):not(.navbar-brand):not(.toc-action):not(.sidebar-link):not(.sidebar-item-toggle):not(.pagination-link):not(.no-external):not([aria-hidden]):not(.dropdown-item):not(.quarto-navigation-tool):not(.about-link)');
+    for (var i=0; i<links.length; i++) {
+      const link = links[i];
+      if (!isInternal(link.href)) {
+        // undo the damage that might have been done by quarto-nav.js in the case of
+        // links that we want to consider external
+        if (link.dataset.originalHref !== undefined) {
+          link.href = link.dataset.originalHref;
+        }
+      }
+    }
+  function tippyHover(el, contentFn, onTriggerFn, onUntriggerFn) {
+    const config = {
+      allowHTML: true,
+      maxWidth: 500,
+      delay: 100,
+      arrow: false,
+      appendTo: function(el) {
+          return el.parentElement;
+      },
+      interactive: true,
+      interactiveBorder: 10,
+      theme: 'quarto',
+      placement: 'bottom-start',
+    };
+    if (contentFn) {
+      config.content = contentFn;
+    }
+    if (onTriggerFn) {
+      config.onTrigger = onTriggerFn;
+    }
+    if (onUntriggerFn) {
+      config.onUntrigger = onUntriggerFn;
+    }
+    window.tippy(el, config); 
+  }
+  const noterefs = window.document.querySelectorAll('a[role="doc-noteref"]');
+  for (var i=0; i<noterefs.length; i++) {
+    const ref = noterefs[i];
+    tippyHover(ref, function() {
+      // use id or data attribute instead here
+      let href = ref.getAttribute('data-footnote-href') || ref.getAttribute('href');
+      try { href = new URL(href).hash; } catch {}
+      const id = href.replace(/^#\/?/, "");
+      const note = window.document.getElementById(id);
+      if (note) {
+        return note.innerHTML;
+      } else {
+        return "";
+      }
+    });
+  }
+  const xrefs = window.document.querySelectorAll('a.quarto-xref');
+  const processXRef = (id, note) => {
+    // Strip column container classes
+    const stripColumnClz = (el) => {
+      el.classList.remove("page-full", "page-columns");
+      if (el.children) {
+        for (const child of el.children) {
+          stripColumnClz(child);
+        }
+      }
+    }
+    stripColumnClz(note)
+    if (id === null || id.startsWith('sec-')) {
+      // Special case sections, only their first couple elements
+      const container = document.createElement("div");
+      if (note.children && note.children.length > 2) {
+        container.appendChild(note.children[0].cloneNode(true));
+        for (let i = 1; i < note.children.length; i++) {
+          const child = note.children[i];
+          if (child.tagName === "P" && child.innerText === "") {
+            continue;
+          } else {
+            container.appendChild(child.cloneNode(true));
+            break;
+          }
+        }
+        if (window.Quarto?.typesetMath) {
+          window.Quarto.typesetMath(container);
+        }
+        return container.innerHTML
+      } else {
+        if (window.Quarto?.typesetMath) {
+          window.Quarto.typesetMath(note);
+        }
+        return note.innerHTML;
+      }
+    } else {
+      // Remove any anchor links if they are present
+      const anchorLink = note.querySelector('a.anchorjs-link');
+      if (anchorLink) {
+        anchorLink.remove();
+      }
+      if (window.Quarto?.typesetMath) {
+        window.Quarto.typesetMath(note);
+      }
+      if (note.classList.contains("callout")) {
+        return note.outerHTML;
+      } else {
+        return note.innerHTML;
+      }
+    }
+  }
+  for (var i=0; i<xrefs.length; i++) {
+    const xref = xrefs[i];
+    tippyHover(xref, undefined, function(instance) {
+      instance.disable();
+      let url = xref.getAttribute('href');
+      let hash = undefined; 
+      if (url.startsWith('#')) {
+        hash = url;
+      } else {
+        try { hash = new URL(url).hash; } catch {}
+      }
+      if (hash) {
+        const id = hash.replace(/^#\/?/, "");
+        const note = window.document.getElementById(id);
+        if (note !== null) {
+          try {
+            const html = processXRef(id, note.cloneNode(true));
+            instance.setContent(html);
+          } finally {
+            instance.enable();
+            instance.show();
+          }
+        } else {
+          // See if we can fetch this
+          fetch(url.split('#')[0])
+          .then(res => res.text())
+          .then(html => {
+            const parser = new DOMParser();
+            const htmlDoc = parser.parseFromString(html, "text/html");
+            const note = htmlDoc.getElementById(id);
+            if (note !== null) {
+              const html = processXRef(id, note);
+              instance.setContent(html);
+            } 
+          }).finally(() => {
+            instance.enable();
+            instance.show();
+          });
+        }
+      } else {
+        // See if we can fetch a full url (with no hash to target)
+        // This is a special case and we should probably do some content thinning / targeting
+        fetch(url)
+        .then(res => res.text())
+        .then(html => {
+          const parser = new DOMParser();
+          const htmlDoc = parser.parseFromString(html, "text/html");
+          const note = htmlDoc.querySelector('main.content');
+          if (note !== null) {
+            // This should only happen for chapter cross references
+            // (since there is no id in the URL)
+            // remove the first header
+            if (note.children.length > 0 && note.children[0].tagName === "HEADER") {
+              note.children[0].remove();
+            }
+            const html = processXRef(null, note);
+            instance.setContent(html);
+          } 
+        }).finally(() => {
+          instance.enable();
+          instance.show();
+        });
+      }
+    }, function(instance) {
+    });
+  }
+      let selectedAnnoteEl;
+      const selectorForAnnotation = ( cell, annotation) => {
+        let cellAttr = 'data-code-cell="' + cell + '"';
+        let lineAttr = 'data-code-annotation="' +  annotation + '"';
+        const selector = 'span[' + cellAttr + '][' + lineAttr + ']';
+        return selector;
+      }
+      const selectCodeLines = (annoteEl) => {
+        const doc = window.document;
+        const targetCell = annoteEl.getAttribute("data-target-cell");
+        const targetAnnotation = annoteEl.getAttribute("data-target-annotation");
+        const annoteSpan = window.document.querySelector(selectorForAnnotation(targetCell, targetAnnotation));
+        const lines = annoteSpan.getAttribute("data-code-lines").split(",");
+        const lineIds = lines.map((line) => {
+          return targetCell + "-" + line;
+        })
+        let top = null;
+        let height = null;
+        let parent = null;
+        if (lineIds.length > 0) {
+            //compute the position of the single el (top and bottom and make a div)
+            const el = window.document.getElementById(lineIds[0]);
+            top = el.offsetTop;
+            height = el.offsetHeight;
+            parent = el.parentElement.parentElement;
+          if (lineIds.length > 1) {
+            const lastEl = window.document.getElementById(lineIds[lineIds.length - 1]);
+            const bottom = lastEl.offsetTop + lastEl.offsetHeight;
+            height = bottom - top;
+          }
+          if (top !== null && height !== null && parent !== null) {
+            // cook up a div (if necessary) and position it 
+            let div = window.document.getElementById("code-annotation-line-highlight");
+            if (div === null) {
+              div = window.document.createElement("div");
+              div.setAttribute("id", "code-annotation-line-highlight");
+              div.style.position = 'absolute';
+              parent.appendChild(div);
+            }
+            div.style.top = top - 2 + "px";
+            div.style.height = height + 4 + "px";
+            div.style.left = 0;
+            let gutterDiv = window.document.getElementById("code-annotation-line-highlight-gutter");
+            if (gutterDiv === null) {
+              gutterDiv = window.document.createElement("div");
+              gutterDiv.setAttribute("id", "code-annotation-line-highlight-gutter");
+              gutterDiv.style.position = 'absolute';
+              const codeCell = window.document.getElementById(targetCell);
+              const gutter = codeCell.querySelector('.code-annotation-gutter');
+              gutter.appendChild(gutterDiv);
+            }
+            gutterDiv.style.top = top - 2 + "px";
+            gutterDiv.style.height = height + 4 + "px";
+          }
+          selectedAnnoteEl = annoteEl;
+        }
+      };
+      const unselectCodeLines = () => {
+        const elementsIds = ["code-annotation-line-highlight", "code-annotation-line-highlight-gutter"];
+        elementsIds.forEach((elId) => {
+          const div = window.document.getElementById(elId);
+          if (div) {
+            div.remove();
+          }
+        });
+        selectedAnnoteEl = undefined;
+      };
+        // Handle positioning of the toggle
+    window.addEventListener(
+      "resize",
+      throttle(() => {
+        elRect = undefined;
+        if (selectedAnnoteEl) {
+          selectCodeLines(selectedAnnoteEl);
+        }
+      }, 10)
+    );
+    function throttle(fn, ms) {
+    let throttle = false;
+    let timer;
+      return (...args) => {
+        if(!throttle) { // first call gets through
+            fn.apply(this, args);
+            throttle = true;
+        } else { // all the others get throttled
+            if(timer) clearTimeout(timer); // cancel #2
+            timer = setTimeout(() => {
+              fn.apply(this, args);
+              timer = throttle = false;
+            }, ms);
+        }
+      };
+    }
+      // Attach click handler to the DT
+      const annoteDls = window.document.querySelectorAll('dt[data-target-cell]');
+      for (const annoteDlNode of annoteDls) {
+        annoteDlNode.addEventListener('click', (event) => {
+          const clickedEl = event.target;
+          if (clickedEl !== selectedAnnoteEl) {
+            unselectCodeLines();
+            const activeEl = window.document.querySelector('dt[data-target-cell].code-annotation-active');
+            if (activeEl) {
+              activeEl.classList.remove('code-annotation-active');
+            }
+            selectCodeLines(clickedEl);
+            clickedEl.classList.add('code-annotation-active');
+          } else {
+            // Unselect the line
+            unselectCodeLines();
+            clickedEl.classList.remove('code-annotation-active');
+          }
+        });
+      }
+  const findCites = (el) => {
+    const parentEl = el.parentElement;
+    if (parentEl) {
+      const cites = parentEl.dataset.cites;
+      if (cites) {
+        return {
+          el,
+          cites: cites.split(' ')
+        };
+      } else {
+        return findCites(el.parentElement)
+      }
+    } else {
+      return undefined;
+    }
+  };
+  var bibliorefs = window.document.querySelectorAll('a[role="doc-biblioref"]');
+  for (var i=0; i<bibliorefs.length; i++) {
+    const ref = bibliorefs[i];
+    const citeInfo = findCites(ref);
+    if (citeInfo) {
+      tippyHover(citeInfo.el, function() {
+        var popup = window.document.createElement('div');
+        citeInfo.cites.forEach(function(cite) {
+          var citeDiv = window.document.createElement('div');
+          citeDiv.classList.add('hanging-indent');
+          citeDiv.classList.add('csl-entry');
+          var biblioDiv = window.document.getElementById('ref-' + cite);
+          if (biblioDiv) {
+            citeDiv.innerHTML = biblioDiv.innerHTML;
+          }
+          popup.appendChild(citeDiv);
+        });
+        return popup.innerHTML;
+      });
+    }
+  }
+});
+</script>
+</div> <!-- /content -->
+
+
+
+
+</body></html>
